@@ -11,6 +11,11 @@ export async function register(req, res) {
         const { email, password, fullname = {} } = req.body || {};
         const { firstName, lastName } = fullname;
 
+        // Basic request validation guard (additional express-validator already applied in route)
+        if(!email || !password || !firstName || !lastName){
+            return res.status(400).json({ message: 'email, password, fullname.firstName and fullname.lastName are required' });
+        }
+
         const isUserAlreadyExists = await userModel.findOne({ email });
 
         if (isUserAlreadyExists) {
@@ -19,16 +24,33 @@ export async function register(req, res) {
 
         const hash = await bcrypt.hash(password, 10);
 
-        const user = await userModel.create({
+        let user;
+        try{
+            user = await userModel.create({
             email,
             password: hash,
             fullname: {
                 firstName,
                 lastName,
             },
-        });
+            });
+        }catch(createErr){
+            // handle duplicate key (unique email)
+            if(createErr && createErr.code === 11000){
+                return res.status(409).json({ message: 'User with this email already exists' });
+            }
+            throw createErr;
+        }
 
         const token = jwt.sign({ id: user._id, role: user.role }, config.JWT_SECRET, { expiresIn: '2d' });
+
+         
+        await publishToQueue("user_created", {
+                id: user._id,
+                email: user.email,
+                fullname: user.fullname,
+                role: user.role
+        });
 
         res.cookie('token', token);
 
@@ -81,14 +103,16 @@ export async function googleAuthCallback(req, res) {
             },
         });
 
+        await publishToQueue("user_created", {
+            id: newUser._id,
+            email: newUser.email,
+            fullname: newUser.fullname,
+            role: newUser.role
+        });
+
         const token = jwt.sign({ id: newUser._id, role: newUser.role }, config.JWT_SECRET, { expiresIn: '2d' });
 
-        await publishToQueue("user_created", {
-            id: user._id,
-            email: user.email,
-            fullname: user.fullname,
-            role: user.role
-        })
+       
 
         res.cookie('token', token);
         res.status(201).json({

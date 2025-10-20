@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
 import config from '../config/config.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 
 const MONGO_URI = config.MONGO_URI;
 
@@ -14,7 +18,7 @@ async function connectDB() {
 
   try {
     await mongoose.connect(MONGO_URI);
-    console.log('✅ MongoDB connected successfully');
+    console.log('✅ MongoDB atlas connected successfully');
     return mongoose.connection;
   } catch (err) {
     console.error('❌ MongoDB connection failed:', err.message);

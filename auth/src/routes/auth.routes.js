@@ -5,6 +5,12 @@ import * as validationRules from '../middlewares/validation.middleware.js';
 
 const router = express.Router();
 
+router.get('/test', (req, res) => {
+  res.json({ message: 'Auth API is working!' });
+});
+
+
+
 router.post('/register', validationRules.registerUserValidationRules, authController.register);
 
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));

@@ -20,7 +20,11 @@ export async function login(req, res) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        const token = jwt.sign({ id: user._id, role: user.role }, config.JWT_SECRET, { expiresIn: '2d' });
+        const token = jwt.sign({
+            id: user._id,
+            role: user.role,
+            fullname: user.fullname
+        }, config.JWT_SECRET, { expiresIn: '2d' });
 
         res.cookie('token', token, {
             httpOnly: true,
@@ -29,15 +33,7 @@ export async function login(req, res) {
             maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
         });
 
-        return res.status(200).json({
-            message: 'User logged in successfully',
-            user: {
-                id: user._id,
-                email: user.email,
-                fullname: user.fullname,
-                role: user.role
-            }
-        });
+        res.redirect('http://localhost:5173'); //Redirect to your frontend URL
     } catch (err) {
         console.error('Login error:', err);
         return res.status(500).json({ message: 'Internal server error', error: err.message });
@@ -47,7 +43,7 @@ export async function login(req, res) {
 
 export async function register(req, res) {
     try {
-        const { email, password, fullname = {} } = req.body || {};
+        const { email, password, fullname = {},role="user" } = req.body || {};
         const { firstName, lastName } = fullname;
 
         const isUserAlreadyExists = await userModel.findOne({ email });
@@ -65,9 +61,14 @@ export async function register(req, res) {
                 firstName,
                 lastName,
             },
+            role
         });
 
-        const token = jwt.sign({ id: user._id, role: user.role }, config.JWT_SECRET, { expiresIn: '2d' });
+        const token = jwt.sign({
+            id: user._id, 
+            role: user.role,
+            fullname: user.fullname
+        }, config.JWT_SECRET, { expiresIn: '2d' });
 
          
         await publishToQueue("user_created", {
@@ -114,7 +115,10 @@ export async function googleAuthCallback(req, res) {
 
         if (isUserAlreadyExists) {
             const token = jwt.sign(
-                { id: isUserAlreadyExists._id, role: isUserAlreadyExists.role }, 
+                { id: isUserAlreadyExists._id,
+                role: isUserAlreadyExists.role,
+                fullname: isUserAlreadyExists.fullname
+            }, 
                 config.JWT_SECRET, 
                 { expiresIn: '2d' }
             );
@@ -126,15 +130,7 @@ export async function googleAuthCallback(req, res) {
                 maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
             });
 
-            return res.status(200).json({
-                message: 'User logged in successfully',
-                user: {
-                    id: isUserAlreadyExists._id,
-                    email: isUserAlreadyExists.email,
-                    fullname: isUserAlreadyExists.fullname,
-                    role: isUserAlreadyExists.role,
-                },
-            });
+            res.redirect('http://localhost:5173')
         }
 
         const newUser = await userModel.create({
@@ -154,7 +150,10 @@ export async function googleAuthCallback(req, res) {
         });
 
         const token = jwt.sign(
-            { id: newUser._id, role: newUser.role }, 
+            { id: newUser._id,
+            role: newUser.role,
+            fullname: newUser.fullname
+       }, 
             config.JWT_SECRET, 
             { expiresIn: '2d' }
         );

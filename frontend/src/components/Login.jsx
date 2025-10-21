@@ -61,7 +61,9 @@ export default function Login() {
           Welcome Back
         </h1>
         
-        <button type="button" className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-150 ease-in-out">
+        <button type="button" className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-150 ease-in-out" onClick={()=>{
+            window.location.href = 'http://localhost:3000/api/auth/google'
+        }}>
           <img 
             src="/src/assets/Google_Favicon_2025.svg.png" 
             alt="Google logo" 

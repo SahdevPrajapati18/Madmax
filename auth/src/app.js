@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.routes.js';
 import dotenv from 'dotenv';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import cors from 'cors';
 
 
 dotenv.config();
@@ -22,7 +23,10 @@ passport.use(new GoogleStrategy({
 }));
 
 
-
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}))
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

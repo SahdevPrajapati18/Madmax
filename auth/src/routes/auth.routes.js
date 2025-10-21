@@ -12,7 +12,7 @@ router.get('/test', (req, res) => {
 
 
 router.post('/register', validationRules.registerUserValidationRules, authController.register);
-
+router.post('/login', validationRules.loginUserValidationRules, authController.login);
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get(

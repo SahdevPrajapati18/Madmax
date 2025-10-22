@@ -94,31 +94,31 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 tracking-tight">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black text-white mb-2 tracking-tight">
             Discover Music
           </h1>
-          <p className="text-lg text-gray-400 mb-4">Browse and play your favorite songs</p>
+          <p className="text-base sm:text-lg text-gray-400 mb-4">Browse and play your favorite songs</p>
           {!isAuthenticated && (
             <div className="bg-green-500/10 border border-green-500 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
                 </svg>
                 <div className="flex-1">
-                  <p className="text-green-400 font-semibold">Login Required for Music Playback</p>
-                  <p className="text-green-300 text-sm">Sign in to listen to songs and access full playlist features</p>
+                  <p className="text-green-400 font-semibold text-sm sm:text-base">Login Required for Music Playback</p>
+                  <p className="text-green-300 text-xs sm:text-sm">Sign in to listen to songs and access full playlist features</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <Link
                     to="/login"
-                    className="bg-green-500 hover:bg-green-400 text-black px-4 py-2 rounded-full font-semibold transition-colors"
+                    className="bg-green-500 hover:bg-green-400 text-black px-4 py-2 rounded-full font-semibold transition-colors text-center text-sm touch-target"
                   >
                     Login
                   </Link>
                   <Link
                     to="/register"
-                    className="bg-transparent border border-green-500 text-green-500 hover:bg-green-500 hover:text-black px-4 py-2 rounded-full font-semibold transition-colors"
+                    className="bg-transparent border border-green-500 text-green-500 hover:bg-green-500 hover:text-black px-4 py-2 rounded-full font-semibold transition-colors text-center text-sm touch-target"
                   >
                     Sign Up
                   </Link>
@@ -129,60 +129,62 @@ export default function Home() {
         </div>
 
         {/* Search Bar */}
-        <div className="mb-8 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
-          <div className="relative flex-1 min-w-0">
-            <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-            </svg>
-            <input
-              type="text"
-              placeholder={`Search for ${searchType === 'song' ? 'songs' : 'artists'}...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
-            />
-          </div>
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+            <div className="relative flex-1 min-w-0">
+              <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              </svg>
+              <input
+                type="text"
+                placeholder={`Search for ${searchType === 'song' ? 'songs' : 'artists'}...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-gray-800/80 backdrop-blur-sm border border-gray-700 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors text-base touch-target"
+              />
+            </div>
 
-          <div className="flex bg-gray-800 p-1 rounded-full border border-gray-700">
-            <button
-              className={`px-6 py-2 rounded-full font-semibold text-sm transition-colors ${
-                searchType === 'song'
-                  ? 'bg-green-500 text-black'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-              onClick={() => setSearchType('song')}
-            >
-              Songs
-            </button>
-            <button
-              className={`px-6 py-2 rounded-full font-semibold text-sm transition-colors ${
-                searchType === 'artist'
-                  ? 'bg-green-500 text-black'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-              onClick={() => setSearchType('artist')}
-            >
-              Artists
-            </button>
+            <div className="flex bg-gray-800/80 backdrop-blur-sm p-1 rounded-full border border-gray-700">
+              <button
+                className={`px-4 sm:px-6 py-2 rounded-full font-semibold text-sm transition-colors touch-target ${
+                  searchType === 'song'
+                    ? 'bg-green-500 text-black'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+                onClick={() => setSearchType('song')}
+              >
+                Songs
+              </button>
+              <button
+                className={`px-4 sm:px-6 py-2 rounded-full font-semibold text-sm transition-colors touch-target ${
+                  searchType === 'artist'
+                    ? 'bg-green-500 text-black'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+                onClick={() => setSearchType('artist')}
+              >
+                Artists
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Content */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <div className="w-12 h-12 border-4 border-gray-800 border-t-green-500 rounded-full animate-spin mb-4"></div>
-            <p className="text-lg">Loading music...</p>
+          <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-gray-400">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-gray-800 border-t-green-500 rounded-full animate-spin mb-4"></div>
+            <p className="text-base sm:text-lg">Loading music...</p>
           </div>
         ) : songs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-gray-400">
+            <svg className="w-12 h-12 sm:w-16 sm:h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
             </svg>
-            <p className="text-lg mb-2">No songs available</p>
-            <p className="text-sm">Check your internet connection or try refreshing the page</p>
+            <p className="text-base sm:text-lg mb-2">No songs available</p>
+            <p className="text-xs sm:text-sm text-center max-w-md">Check your internet connection or try refreshing the page</p>
             <button
               onClick={fetchSongs}
-              className="mt-4 px-4 py-2 bg-green-500 text-black rounded-full hover:bg-green-400 transition-colors"
+              className="mt-4 px-6 py-3 bg-green-500 text-black rounded-full hover:bg-green-400 transition-colors font-semibold touch-target"
             >
               Retry
             </button>
@@ -190,24 +192,24 @@ export default function Home() {
         ) : searchType === 'song' ? (
           /* Songs Grid View */
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">
               {searchQuery ? `Search Results (${filteredSongs.length})` : 'All Songs'}
             </h2>
             {filteredSongs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-gray-400">
+                <svg className="w-12 h-12 sm:w-16 sm:h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
-                <p className="text-lg">No songs found</p>
+                <p className="text-base sm:text-lg">No songs found</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
                 {filteredSongs.map((song, index) => (
                   <div
                     key={song._id || song.id || index}
-                    className="group bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors cursor-pointer"
+                    className="group bg-gray-800/80 backdrop-blur-sm rounded-lg p-3 sm:p-4 hover:bg-gray-700/80 transition-all duration-200 cursor-pointer touch-target"
                   >
-                    <div className="relative mb-4 aspect-square">
+                    <div className="relative mb-3 aspect-square">
                       <img
                         src={song.coverImageUrl || 'https://via.placeholder.com/300x300?text=No+Image'}
                         alt={song.title || 'Unknown Title'}
@@ -215,26 +217,26 @@ export default function Home() {
                       />
                       {isAuthenticated && (
                         <button
-                          className="absolute bottom-2 right-2 w-12 h-12 bg-green-500 hover:bg-green-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-lg"
+                          className="absolute bottom-2 right-2 w-10 h-10 sm:w-12 sm:h-12 bg-green-500 hover:bg-green-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-lg touch-target"
                           onClick={() => playSong(song, filteredSongs, index)}
                         >
-                          <svg className="w-6 h-6 text-black ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-black ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M8 5.14v14l11-7-11-7z" />
                           </svg>
                         </button>
                       )}
                       {!isAuthenticated && (
-                        <div className="absolute bottom-2 right-2 w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-lg">
-                          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <div className="absolute bottom-2 right-2 w-10 h-10 sm:w-12 sm:h-12 bg-gray-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-lg">
+                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
                           </svg>
                         </div>
                       )}
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-white font-semibold text-sm truncate">{song.title || 'Unknown Title'}</h3>
+                      <h3 className="text-white font-semibold text-xs sm:text-sm truncate leading-tight">{song.title || 'Unknown Title'}</h3>
                       <button
-                        className="text-gray-400 text-sm hover:text-white hover:underline transition-colors text-left"
+                        className="text-gray-400 text-xs sm:text-sm hover:text-white hover:underline transition-colors text-left touch-target"
                         onClick={() => handleArtistClick(song.artistId, song.artist)}
                       >
                         {song.artist || 'Unknown Artist'}
@@ -248,30 +250,30 @@ export default function Home() {
         ) : (
           /* Artists List View */
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">
               {searchQuery ? `Artists Found (${Object.keys(groupedByArtist).length})` : 'All Artists'}
             </h2>
             {Object.keys(groupedByArtist).length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-gray-400">
+                <svg className="w-12 h-12 sm:w-16 sm:h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <p className="text-lg mb-2">No artists found</p>
-                <p className="text-sm">Try a different search term</p>
+                <p className="text-base sm:text-lg mb-2">No artists found</p>
+                <p className="text-xs sm:text-sm">Try a different search term</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {Object.values(groupedByArtist).map((artist, index) => (
-                  <div key={index} className="bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors">
+                  <div key={index} className="bg-gray-800/80 backdrop-blur-sm rounded-lg p-4 hover:bg-gray-700/80 transition-all duration-200">
                     <div
-                      className="flex items-center gap-4 mb-4 pb-4 border-b border-gray-700 cursor-pointer group"
+                      className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 pb-4 border-b border-gray-700/50 cursor-pointer group"
                       onClick={() => handleArtistClick(artist.artistId, artist.name)}
                     >
-                      <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-400 rounded-full flex items-center justify-center text-black text-2xl font-bold flex-shrink-0">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500 to-green-400 rounded-full flex items-center justify-center text-black text-xl sm:text-2xl font-bold flex-shrink-0 group-hover:scale-105 transition-transform">
                         {artist.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-bold text-white mb-1">{artist.name}</h3>
+                        <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{artist.name}</h3>
                         <p className="text-gray-400 text-sm">
                           {artist.songs.length} song{artist.songs.length !== 1 ? 's' : ''}
                         </p>
@@ -282,18 +284,23 @@ export default function Home() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {artist.songs.slice(0, 3).map((song, songIndex) => (
-                        <div key={song._id || songIndex} className="flex items-center gap-3 p-2 rounded hover:bg-gray-600 transition-colors">
+                        <div key={song._id || songIndex} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-600/50 transition-colors touch-target">
                           <img
                             src={song.coverImageUrl || 'https://via.placeholder.com/50x50?text=No+Image'}
                             alt={song.title}
-                            className="w-12 h-12 rounded object-cover flex-shrink-0"
+                            className="w-10 h-10 sm:w-12 sm:h-12 rounded object-cover flex-shrink-0"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm font-medium truncate">{song.title}</p>
+                            <p className="text-white text-xs sm:text-sm font-medium truncate">{song.title}</p>
                           </div>
                           <button
-                            className={`w-8 h-8 ${isAuthenticated ? 'bg-transparent hover:bg-green-500' : 'bg-gray-600 cursor-not-allowed'} rounded-full flex items-center justify-center text-gray-400 hover:text-black transition-all flex-shrink-0`}
-                            onClick={() => isAuthenticated ? playSong(song, filteredSongs, filteredSongs.indexOf(song)) : alert('Please log in to play music')}
+                            className={`w-8 h-8 ${isAuthenticated ? 'bg-transparent hover:bg-green-500/20 text-gray-400 hover:text-green-400' : 'bg-gray-600 cursor-not-allowed'} rounded-full flex items-center justify-center transition-all flex-shrink-0 touch-target`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isAuthenticated) {
+                                playSong(song, filteredSongs, filteredSongs.indexOf(song));
+                              }
+                            }}
                             disabled={!isAuthenticated}
                           >
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
@@ -304,7 +311,7 @@ export default function Home() {
                       ))}
                       {artist.songs.length > 3 && (
                         <button
-                          className="col-span-full p-3 bg-transparent border border-gray-600 rounded-lg text-white text-sm font-semibold hover:border-white hover:scale-105 transition-all text-center"
+                          className="col-span-full p-3 bg-transparent border border-gray-600 rounded-lg text-white text-sm font-semibold hover:border-white hover:bg-white/5 hover:scale-105 transition-all text-center touch-target"
                           onClick={() => handleArtistClick(artist.artistId, artist.name)}
                         >
                           View all {artist.songs.length} songs

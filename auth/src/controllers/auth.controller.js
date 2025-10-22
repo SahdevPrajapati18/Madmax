@@ -33,7 +33,15 @@ export async function login(req, res) {
             maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
         });
 
-        res.redirect('http://localhost:5173'); //Redirect to your frontend URL
+        res.json({
+            message: 'Login successful',
+            user: {
+                id: user._id,
+                email: user.email,
+                fullname: user.fullname,
+                role: user.role
+            }
+        });
     } catch (err) {
         console.error('Login error:', err);
         return res.status(500).json({ message: 'Internal server error', error: err.message });
@@ -101,11 +109,11 @@ export async function googleAuthCallback(req, res) {
         const user = req.user;
         
         if (!user || !user.emails || !user.emails[0] || !user.name) {
-            return res.status(400).json({ 
-                message: 'Invalid Google account data' 
+            return res.status(500).json({ 
+                message: 'Error processing Google authentication',
+                error: 'Invalid Google account data'
             });
         }
-
         const isUserAlreadyExists = await userModel.findOne({
             $or: [
                 { email: user.emails[0].value },
@@ -122,6 +130,10 @@ export async function googleAuthCallback(req, res) {
                 config.JWT_SECRET, 
                 { expiresIn: '2d' }
             );
+
+            if(isUserAlreadyExists.role === "artist"){
+                return res.redirect("http://localhost:5173/artist/dashboard");
+            }
 
             res.cookie('token', token, {
                 httpOnly: true,
@@ -158,6 +170,8 @@ export async function googleAuthCallback(req, res) {
             { expiresIn: '2d' }
         );
 
+        
+        
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -180,5 +194,26 @@ export async function googleAuthCallback(req, res) {
             message: 'Error processing Google authentication',
             error: err.message 
         });
+    }
+}
+
+export async function getCurrentUser(req, res) {
+    try {
+        // The user should be available in req.user from the auth middleware
+        if (!req.user) {
+            return res.status(401).json({ message: 'Not authenticated' });
+        }
+
+        res.json({
+            user: {
+                id: req.user._id,
+                email: req.user.email,
+                fullname: req.user.fullname,
+                role: req.user.role
+            }
+        });
+    } catch (err) {
+        console.error('Get current user error:', err);
+        return res.status(500).json({ message: 'Internal server error', error: err.message });
     }
 }

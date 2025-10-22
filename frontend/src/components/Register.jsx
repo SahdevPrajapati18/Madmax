@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import axios from 'axios';
+import { useAuth } from './AuthContext';
 import '../styles/Register.css';
 
 export default function Register() {
   const navigate = useNavigate();
+  const { register: registerUser } = useAuth();
   const [error, setError] = useState('');
   
   const {
@@ -24,43 +25,25 @@ export default function Register() {
   });
 
   const onSubmit = async (data) => {
-    setError(''); // Clear any previous errors
-    
-    try {
-        const response = await axios.post("http://localhost:3000/api/auth/register", {
-            email: data.email.trim(),
-            fullname: {
-                firstName: data.firstName.trim(),
-                lastName: data.lastName.trim()
-            },
-            password: data.password,
-            role: data.userType
-        }, {
-            withCredentials: true,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+    setError('');
 
-        if (response.data && response.data.user) {
-            // Successful registration
-            navigate('/');
-        }
-    } catch (err) {
-        if (err.response) {
-            // Server responded with an error
-            const errorMessage = err.response.data?.message || "Registration failed";
-            setError(errorMessage);
-            console.error("Server error:", err.response.data);
-        } else if (err.request) {
-            // Request was made but no response
-            setError("No response from server. Please check your connection.");
-            console.error("Network error:", err.request);
-        } else {
-            // Error in request setup
-            setError("Unable to make registration request");
-            console.error("Request setup error:", err.message);
-        }
+    const result = await registerUser(
+      data.email.trim(),
+      data.password,
+      data.firstName.trim(),
+      data.lastName.trim(),
+      data.userType
+    );
+
+    if (result.success) {
+      // Redirect based on user role
+      if (result.user.role === 'artist') {
+        navigate('/artist/dashboard');
+      } else {
+        navigate('/');
+      }
+    } else {
+      setError(result.error);
     }
   };
 
@@ -193,17 +176,17 @@ export default function Register() {
             <input
               type="password"
               id="password"
-              placeholder="••••••••"
+              placeholder="Must contain uppercase, lowercase, number & special character"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
               {...register("password", {
                 required: "Password is required",
                 minLength: {
-                  value: 6,
-                  message: "Password must be at least 6 characters"
+                  value: 8,
+                  message: "Password must be at least 8 characters"
                 },
                 pattern: {
-                  value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/,
-                  message: "Password must contain at least one letter and one number"
+                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/,
+                  message: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
                 }
               })}
             />

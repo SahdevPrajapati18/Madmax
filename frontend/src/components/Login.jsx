@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import axios from 'axios';
+import { useAuth } from './AuthContext';
 import '../styles/Login.css';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [error, setError] = useState('');
   
   const {
@@ -22,35 +23,17 @@ export default function Login() {
   const onSubmit = async (data) => {
     setError(''); 
     
-    try {
-      const response = await axios.post("http://localhost:3000/api/auth/login", {
-        email: data.email.trim(),
-        password: data.password
-      }, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+    const result = await login(data.email.trim(), data.password);
 
-      if (response.data && response.data.user) {
+    if (result.success) {
+      // Redirect based on user role
+      if (result.user.role === 'artist') {
+        navigate('/artist/dashboard');
+      } else {
         navigate('/');
       }
-    } catch (err) {
-      if (err.response) {
-        // Server responded with an error
-        const errorMessage = err.response.data?.message || "Invalid email or password";
-        setError(errorMessage);
-        console.error("Server error:", err.response.data);
-      } else if (err.request) {
-        // Request was made but no response
-        setError("No response from server. Please check your connection.");
-        console.error("Network error:", err.request);
-      } else {
-        // Error in request setup
-        setError("Unable to process login request");
-        console.error("Request setup error:", err.message);
-      }
+    } else {
+      setError(result.error);
     }
   };
 

@@ -19,6 +19,9 @@ router.post('/upload',authMiddleware.authArtistMiddleware, upload.fields([
 ]), musicController.uploadMusic)
 
 
+//GET /api/music/public - Public endpoint for all songs (no auth required)
+router.get('/public', musicController.getAllMusics)
+
 //GET /api/music
 
 router.get('/', authMiddleware.authUserMiddleware, musicController.getAllMusics)

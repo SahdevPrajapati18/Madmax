@@ -29,7 +29,7 @@ export default function Login() {
     if (result.success) {
       // Redirect based on user role
       if (result.user.role === 'artist') {
-        navigate('/artist/dashboard');
+        navigate('/dashboard');
       } else {
         navigate('/');
       }

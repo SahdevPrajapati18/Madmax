@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-export default function MusicPlayer({ currentSong, onNext, onPrevious, playlist = [] }) {
-  const [isPlaying, setIsPlaying] = useState(false);
+export default function MusicPlayer({ currentSong, onNext, onPrevious, playlist = [], isPlaying, onTogglePlay, onStop }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
@@ -24,15 +23,20 @@ export default function MusicPlayer({ currentSong, onNext, onPrevious, playlist 
     }
   }, [volume, isMuted]);
 
-  const togglePlay = () => {
-    if (!audioRef.current || !currentSong) return;
-
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play().catch(err => console.error('Error playing audio:', err));
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play().catch(err => console.error('Error playing audio:', err));
+      } else {
+        audioRef.current.pause();
+      }
     }
-    setIsPlaying(!isPlaying);
+  }, [isPlaying]);
+
+  const togglePlay = () => {
+    if (onTogglePlay) {
+      onTogglePlay();
+    }
   };
 
   const handleTimeUpdate = () => {
@@ -66,7 +70,6 @@ export default function MusicPlayer({ currentSong, onNext, onPrevious, playlist 
   };
 
   const handleEnded = () => {
-    setIsPlaying(false);
     if (onNext) {
       onNext();
     }
@@ -105,6 +108,11 @@ export default function MusicPlayer({ currentSong, onNext, onPrevious, playlist 
             <div className="text-gray-400 text-xs truncate hover:text-white cursor-pointer">
               {currentSong.artist}
             </div>
+            {playlist.length <= 1 && (
+              <div className="text-green-500 text-xs mt-1">
+                Single Song Mode
+              </div>
+            )}
           </div>
         </div>
 
@@ -112,7 +120,7 @@ export default function MusicPlayer({ currentSong, onNext, onPrevious, playlist 
         <div className="flex flex-col items-center flex-1 max-w-lg">
           <div className="flex items-center gap-4 mb-2">
             <button
-              className="text-gray-400 hover:text-white p-2 disabled:opacity-30 disabled:cursor-not-allowed"
+              className={`p-2 ${onPrevious ? 'text-gray-400 hover:text-white' : 'text-gray-600 cursor-not-allowed'} disabled:opacity-30 disabled:cursor-not-allowed`}
               onClick={onPrevious}
               disabled={!onPrevious}
             >
@@ -137,7 +145,7 @@ export default function MusicPlayer({ currentSong, onNext, onPrevious, playlist 
             </button>
 
             <button
-              className="text-gray-400 hover:text-white p-2 disabled:opacity-30 disabled:cursor-not-allowed"
+              className={`p-2 ${onNext ? 'text-gray-400 hover:text-white' : 'text-gray-600 cursor-not-allowed'} disabled:opacity-30 disabled:cursor-not-allowed`}
               onClick={onNext}
               disabled={!onNext}
             >

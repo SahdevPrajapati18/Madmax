@@ -15,6 +15,12 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Global music state
+  const [currentSong, setCurrentSong] = useState(null);
+  const [currentPlaylist, setCurrentPlaylist] = useState([]);
+  const [currentSongIndex, setCurrentSongIndex] = useState(-1);
+  const [isPlaying, setIsPlaying] = useState(false);
+
   useEffect(() => {
     // Check if user is already logged in
     checkAuthStatus();
@@ -99,7 +105,47 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', error);
     } finally {
       setUser(null);
+      // Reset music state on logout
+      setCurrentSong(null);
+      setCurrentPlaylist([]);
+      setCurrentSongIndex(-1);
+      setIsPlaying(false);
     }
+  };
+
+  // Global music functions
+  const playSong = (song, playlist = [], index = -1) => {
+    setCurrentSong(song);
+    setCurrentPlaylist(playlist);
+    setCurrentSongIndex(index);
+    setIsPlaying(true);
+  };
+
+  const playNext = () => {
+    if (currentPlaylist.length === 0 || currentSongIndex === -1) return;
+
+    const nextIndex = (currentSongIndex + 1) % currentPlaylist.length;
+    setCurrentSong(currentPlaylist[nextIndex]);
+    setCurrentSongIndex(nextIndex);
+  };
+
+  const playPrevious = () => {
+    if (currentPlaylist.length === 0 || currentSongIndex === -1) return;
+
+    const prevIndex = currentSongIndex === 0 ? currentPlaylist.length - 1 : currentSongIndex - 1;
+    setCurrentSong(currentPlaylist[prevIndex]);
+    setCurrentSongIndex(prevIndex);
+  };
+
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const stopMusic = () => {
+    setCurrentSong(null);
+    setCurrentPlaylist([]);
+    setCurrentSongIndex(-1);
+    setIsPlaying(false);
   };
 
   const value = {
@@ -108,7 +154,17 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     loading,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    // Global music state
+    currentSong,
+    currentPlaylist,
+    currentSongIndex,
+    isPlaying,
+    playSong,
+    playNext,
+    playPrevious,
+    togglePlay,
+    stopMusic
   };
 
   return (

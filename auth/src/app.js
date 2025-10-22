@@ -12,6 +12,10 @@ dotenv.config();
 
 
 const app = express();
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+}))
 
 app.use(passport.initialize());
 passport.use(new GoogleStrategy({
@@ -23,10 +27,7 @@ passport.use(new GoogleStrategy({
 }));
 
 
-app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true
-}))
+
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

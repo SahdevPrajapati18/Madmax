@@ -27,6 +27,7 @@ export default function ResponsiveHeader() {
   const navigationItems = [
     { name: 'Home', href: '/', requiresAuth: false },
     { name: 'Dashboard', href: '/dashboard', requiresAuth: true },
+    { name: 'Playlists', href: '/playlists', requiresAuth: true },
     { name: 'Upload', href: '/new-track', requiresAuth: true, artistOnly: true },
   ];
 

@@ -5,7 +5,7 @@ import * as authMiddleware from '../middlewares/auth.middleware.js';
 
 
 
-const upload = multer({ 
+const upload = multer({
     storage: multer.memoryStorage(),
 });
 
@@ -30,18 +30,33 @@ router.get('/', authMiddleware.authUserMiddleware, musicController.getAllMusics)
 router.get('/artist-musics', authMiddleware.authArtistMiddleware, musicController.getArtistMusic)
 
 
+// GET /api/music/music-details/:id
+router.get('/music-details/:id', authMiddleware.authUserMiddleware, musicController.getMusicDetails)
+
+// Playlist routes - work for both users and artists
 // POST /api/music/playlist
-router.post('/playlist',authMiddleware.authArtistMiddleware, musicController.createPlaylist)
+router.post('/playlist', authMiddleware.authUserMiddleware, musicController.createPlaylist)
 
 // GET /api/music/playlists
-router.get('/playlists', authMiddleware.authArtistMiddleware, musicController.getPlaylists)
+router.get('/playlists', authMiddleware.authUserMiddleware, musicController.getPlaylists)
 
+// GET /api/music/public-playlists (no auth required for public playlists)
+router.get('/public-playlists', musicController.getPublicPlaylists)
 
 //GET /api/music/playlist/:id
 router.get('/playlist/:id', authMiddleware.authUserMiddleware, musicController.getPlaylistById)
 
-//GET /api/music/get-details/:id
-router.get('/get-details/:id', authMiddleware.authUserMiddleware, musicController.getPlaylistById)
+// PUT /api/music/playlist/:id
+router.put('/playlist/:id', authMiddleware.authUserMiddleware, musicController.updatePlaylist)
+
+// DELETE /api/music/playlist/:id
+router.delete('/playlist/:id', authMiddleware.authUserMiddleware, musicController.deletePlaylist)
+
+// POST /api/music/playlist/:id/add
+router.post('/playlist/:id/add', authMiddleware.authUserMiddleware, musicController.addToPlaylist)
+
+// POST /api/music/playlist/:id/remove
+router.post('/playlist/:id/remove', authMiddleware.authUserMiddleware, musicController.removeFromPlaylist)
 
 
 export default router;

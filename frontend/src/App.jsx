@@ -9,6 +9,9 @@ import UserDashboard from './components/UserDashboard'
 import ArtistProfile from './components/ArtistProfile'
 import NewTrack from './components/NewTrack'
 import MusicPlayer from './components/MusicPlayer'
+import Playlists from './components/Playlists'
+import CreatePlaylist from './components/CreatePlaylist'
+import PlaylistDetail from './components/PlaylistDetail'
 
 export default function App() {
   const { user, logout, isAuthenticated, currentSong, currentPlaylist, currentSongIndex, isPlaying, playSong, playNext, playPrevious, togglePlay, stopMusic } = useAuth();
@@ -31,6 +34,9 @@ export default function App() {
           <Route path="/dashboard" element={isArtist ? <ArtistDashboard /> : <UserDashboard />} />
           <Route path="/artist/:artistId" element={<ArtistProfile />} />
           <Route path="/new-track" element={<NewTrack />} />
+          <Route path="/playlists" element={<Playlists />} />
+          <Route path="/playlists/create" element={<CreatePlaylist />} />
+          <Route path="/playlists/:playlistId" element={<PlaylistDetail />} />
         </Routes>
       </main>
 

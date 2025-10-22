@@ -90,6 +90,20 @@ export async function createPlaylist(req, res){
         // Calculate total duration and track count
         let totalDuration = 0;
         let trackCount = musics.length;
+        let coverImageUrl = null;
+
+        // Get the first music to use as cover image
+        if (musics.length > 0) {
+            const firstMusic = await musicModel.findById(musics[0]);
+            if (firstMusic) {
+                try {
+                    coverImageUrl = await getPresignedUrl(firstMusic.coverImageKey);
+                } catch (error) {
+                    // Fallback URL if storage fails
+                    coverImageUrl = `https://picsum.photos/400/400?random=${firstMusic._id}`;
+                }
+            }
+        }
 
         for (const musicId of musics) {
             const music = await musicModel.findById(musicId);
@@ -106,6 +120,7 @@ export async function createPlaylist(req, res){
             userId: req.user.id, // For now, user and artist are the same
             musics,
             isPublic: isPublic || false,
+            coverImageUrl,
             tags: tags || [],
             duration: totalDuration,
             trackCount
@@ -119,6 +134,7 @@ export async function createPlaylist(req, res){
                 description: playlist.description,
                 trackCount: playlist.trackCount,
                 duration: playlist.duration,
+                coverImageUrl: playlist.coverImageUrl,
                 createdAt: playlist.createdAt
             }
         });
@@ -318,10 +334,24 @@ export async function updatePlaylist(req, res){
         // Calculate new duration and track count if musics are being updated
         let totalDuration = existingPlaylist.duration;
         let trackCount = existingPlaylist.trackCount;
+        let coverImageUrl = existingPlaylist.coverImageUrl;
 
         if (musics && musics.length > 0) {
             totalDuration = 0;
             trackCount = musics.length;
+
+            // Update cover image if first song changed
+            if (musics.length > 0 && musics[0] !== existingPlaylist.musics[0]) {
+                const firstMusic = await musicModel.findById(musics[0]);
+                if (firstMusic) {
+                    try {
+                        coverImageUrl = await getPresignedUrl(firstMusic.coverImageKey);
+                    } catch (error) {
+                        // Fallback URL if storage fails
+                        coverImageUrl = `https://picsum.photos/400/400?random=${firstMusic._id}`;
+                    }
+                }
+            }
 
             for (const musicId of musics) {
                 const music = await musicModel.findById(musicId);
@@ -340,6 +370,7 @@ export async function updatePlaylist(req, res){
                 ...(musics && { musics }),
                 ...(isPublic !== undefined && { isPublic }),
                 ...(tags && { tags }),
+                ...(coverImageUrl !== existingPlaylist.coverImageUrl && { coverImageUrl }),
                 duration: totalDuration,
                 trackCount
             },
@@ -354,7 +385,7 @@ export async function updatePlaylist(req, res){
                 description: updatedPlaylist.description,
                 trackCount: updatedPlaylist.trackCount,
                 duration: updatedPlaylist.duration,
-                updatedAt: updatedPlaylist.updatedAt
+                coverImageUrl: updatedPlaylist.coverImageUrl
             }
         });
     } catch (err) {
@@ -410,6 +441,23 @@ export async function addToPlaylist(req, res){
             return res.status(400).json({ message: 'Music already exists in playlist' });
         }
 
+        // Check if this is the first song (playlist was empty)
+        const isFirstSong = playlist.musics.length === 0;
+        let coverImageUrl = playlist.coverImageUrl;
+
+        // If playlist was empty, set cover image from the new first song
+        if (isFirstSong) {
+            const music = await musicModel.findById(musicId);
+            if (music) {
+                try {
+                    coverImageUrl = await getPresignedUrl(music.coverImageKey);
+                } catch (error) {
+                    // Fallback URL if storage fails
+                    coverImageUrl = `https://picsum.photos/400/400?random=${music._id}`;
+                }
+            }
+        }
+
         // Add music to playlist
         playlist.musics.push(musicId);
         playlist.trackCount = playlist.musics.length;
@@ -418,6 +466,11 @@ export async function addToPlaylist(req, res){
         const music = await musicModel.findById(musicId);
         if (music && music.duration) {
             playlist.duration += music.duration;
+        }
+
+        // Update cover image if it was the first song
+        if (isFirstSong) {
+            playlist.coverImageUrl = coverImageUrl;
         }
 
         await playlist.save();
@@ -462,6 +515,26 @@ export async function removeFromPlaylist(req, res){
             return res.status(400).json({ message: 'Music not found in playlist' });
         }
 
+        // Check if this is the first song being removed
+        const isFirstSong = musicIndex === 0;
+        let coverImageUrl = playlist.coverImageUrl;
+
+        // If removing the first song, update cover image from new first song
+        if (isFirstSong && playlist.musics.length > 1) {
+            const newFirstMusic = await musicModel.findById(playlist.musics[1]);
+            if (newFirstMusic) {
+                try {
+                    coverImageUrl = await getPresignedUrl(newFirstMusic.coverImageKey);
+                } catch (error) {
+                    // Fallback URL if storage fails
+                    coverImageUrl = `https://picsum.photos/400/400?random=${newFirstMusic._id}`;
+                }
+            }
+        } else if (isFirstSong && playlist.musics.length === 1) {
+            // If removing the only song, set cover to null
+            coverImageUrl = null;
+        }
+
         // Remove music from playlist
         playlist.musics.splice(musicIndex, 1);
         playlist.trackCount = playlist.musics.length;
@@ -472,6 +545,11 @@ export async function removeFromPlaylist(req, res){
             playlist.duration -= music.duration;
         }
 
+        // Update cover image if the first song was removed
+        if (isFirstSong) {
+            playlist.coverImageUrl = coverImageUrl;
+        }
+
         await playlist.save();
 
         return res.status(200).json({
@@ -480,7 +558,8 @@ export async function removeFromPlaylist(req, res){
                 id: playlist._id,
                 title: playlist.title,
                 trackCount: playlist.trackCount,
-                duration: playlist.duration
+                duration: playlist.duration,
+                coverImageUrl: playlist.coverImageUrl
             }
         });
     } catch (err) {

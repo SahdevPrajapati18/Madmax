@@ -279,8 +279,21 @@ export default function UserDashboard() {
                   <div key={playlist.id} className="group cursor-pointer">
                     <Link to={`/playlists/${playlist._id || playlist.id}`} className="block">
                       <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-700/50 transition-colors touch-target">
-                        <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500/20 to-purple-500/20 rounded-lg flex items-center justify-center text-lg sm:text-2xl group-hover:scale-105 transition-transform">
-                          {playlist.title?.charAt(0).toUpperCase()}
+                        <div className="relative flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden">
+                          {playlist.coverImageUrl ? (
+                            <img
+                              src={playlist.coverImageUrl}
+                              alt={playlist.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-full h-full bg-gradient-to-br from-green-500/20 to-purple-500/20 rounded-lg flex items-center justify-center text-lg sm:text-2xl group-hover:scale-105 transition-transform ${playlist.coverImageUrl ? 'hidden' : ''}`}>
+                            {playlist.title?.charAt(0).toUpperCase()}
+                          </div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">

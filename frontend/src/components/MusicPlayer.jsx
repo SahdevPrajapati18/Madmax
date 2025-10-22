@@ -5,6 +5,8 @@ export default function MusicPlayer({ currentSong, onNext, onPrevious, playlist 
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showPlayer, setShowPlayer] = useState(true);
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -82,8 +84,147 @@ export default function MusicPlayer({ currentSong, onNext, onPrevious, playlist 
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  if (!currentSong) {
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const closePlayer = () => {
+    setShowPlayer(false);
+    if (onStop) {
+      onStop();
+    }
+  };
+
+  if (!currentSong || !showPlayer) {
     return null;
+  }
+
+  if (isFullscreen) {
+    return (
+      <div className="fixed inset-0 bg-black z-50 flex flex-col">
+        <audio
+          ref={audioRef}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleEnded}
+        />
+
+        {/* Fullscreen Header */}
+        <div className="flex items-center justify-between p-4 bg-gray-900 border-b border-gray-700">
+          <div className="flex items-center gap-3">
+            <img
+              src={currentSong.coverImageUrl}
+              alt={currentSong.title}
+              className="w-12 h-12 rounded-lg object-cover shadow-lg"
+            />
+            <div>
+              <div className="text-white text-lg font-medium truncate">{currentSong.title}</div>
+              <div className="text-gray-400 text-sm truncate">{currentSong.artist}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-full transition-colors touch-target"
+              title="Exit fullscreen"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M5 16h3v3h2v-6H4v2h3v1H5v0zm3-8H5v2h3v1H4v2h6V7H8v1zm6 11h2v-3h3v-2h-6v6h1v-1zm2-11V5h-2v6h6V9h-3V8h-1z"/>
+              </svg>
+            </button>
+            <button
+              onClick={closePlayer}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-full transition-colors touch-target"
+              title="Close player"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Fullscreen Content */}
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          {/* Large Album Art */}
+          <div className="mb-8">
+            <img
+              src={currentSong.coverImageUrl}
+              alt={currentSong.title}
+              className="w-80 h-80 sm:w-96 sm:h-96 rounded-2xl object-cover shadow-2xl"
+            />
+          </div>
+
+          {/* Song Info */}
+          <div className="text-center mb-8 max-w-md">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">{currentSong.title}</h2>
+            <p className="text-lg sm:text-xl text-gray-400">{currentSong.artist}</p>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="w-full max-w-md mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-gray-400 text-sm min-w-[2.5rem] text-center">
+                {formatTime(currentTime)}
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={duration ? (currentTime / duration) * 100 : 0}
+                onChange={handleSeek}
+                className="flex-1 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider touch-target"
+              />
+              <span className="text-gray-400 text-sm min-w-[2.5rem] text-center">
+                {formatTime(duration)}
+              </span>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-6">
+            <button
+              className={`p-3 touch-target rounded-full transition-colors ${
+                onPrevious ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 cursor-not-allowed'
+              }`}
+              onClick={onPrevious}
+              disabled={!onPrevious}
+            >
+              <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M3.3 1a.7.7 0 0 1 .7.7v5.15l9.95-5.744a.7.7 0 0 1 1.05.606v12.575a.7.7 0 0 1-1.05.607L4 9.149V14.3a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7V1.7a.7.7 0 0 1 .7-.7h1.6z"/>
+              </svg>
+            </button>
+
+            <button
+              className="bg-white text-black rounded-full p-4 hover:scale-105 transition-all shadow-lg touch-target"
+              onClick={togglePlay}
+            >
+              {isPlaying ? (
+                <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M2.7 1a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7H2.7zm8 0a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-2.6z"/>
+                </svg>
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/>
+                </svg>
+              )}
+            </button>
+
+            <button
+              className={`p-3 touch-target rounded-full transition-colors ${
+                onNext ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 cursor-not-allowed'
+              }`}
+              onClick={onNext}
+              disabled={!onNext}
+            >
+              <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.107A.7.7 0 0 0 1 1.712v12.575a.7.7 0 0 0 1.05.607L12 9.149V14.3a.7.7 0 0 0 .7.7h1.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-1.6z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -205,6 +346,28 @@ export default function MusicPlayer({ currentSong, onNext, onPrevious, playlist 
             onChange={handleVolumeChange}
             className="w-20 sm:w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer slider touch-target hidden sm:block"
           />
+
+          {/* Fullscreen Button */}
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-full transition-colors touch-target"
+            title="Fullscreen"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+            </svg>
+          </button>
+
+          {/* Close Button */}
+          <button
+            onClick={closePlayer}
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-full transition-colors touch-target"
+            title="Close player"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>

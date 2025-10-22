@@ -49,10 +49,12 @@ export default function PlaylistDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-        <div className="flex flex-col items-center text-gray-400">
-          <div className="w-12 h-12 border-4 border-gray-800 border-t-green-500 rounded-full animate-spin mb-4"></div>
-          <p className="text-lg">Loading playlist...</p>
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black py-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center text-gray-400">
+            <div className="w-12 h-12 border-4 border-gray-800 border-t-green-500 rounded-full animate-spin mb-4"></div>
+            <p className="text-lg">Loading playlist...</p>
+          </div>
         </div>
       </div>
     );
@@ -89,36 +91,58 @@ export default function PlaylistDetail() {
               </svg>
             </Link>
             <div className="flex-1">
-              <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">{playlist.title}</h1>
-              {playlist.description && (
-                <p className="text-gray-400 text-lg mb-2">{playlist.description}</p>
-              )}
-              <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span>{playlistService.formatTrackCount(playlist.trackCount || playlist.musics?.length || 0)}</span>
-                {playlist.duration && (
-                  <>
-                    <span>•</span>
-                    <span>{playlistService.formatDuration(playlist.duration)}</span>
-                  </>
-                )}
-                {playlist.plays && (
-                  <>
-                    <span>•</span>
-                    <span>{playlist.plays} plays</span>
-                  </>
-                )}
-                {playlist.tags && playlist.tags.length > 0 && (
-                  <>
-                    <span>•</span>
-                    <div className="flex gap-1">
-                      {playlist.tags.map((tag, index) => (
-                        <span key={index} className="px-2 py-1 bg-gray-700/50 text-gray-300 text-xs rounded-full">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </>
-                )}
+              <div className="flex items-start gap-6">
+                {/* Playlist Cover */}
+                <div className="flex-shrink-0 w-32 h-32 sm:w-48 sm:h-48 rounded-2xl overflow-hidden shadow-2xl">
+                  {playlist.coverImageUrl ? (
+                    <img
+                      src={playlist.coverImageUrl}
+                      alt={playlist.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className={`w-full h-full bg-gradient-to-br from-green-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center text-6xl sm:text-8xl font-black text-gray-400 ${playlist.coverImageUrl ? 'hidden' : ''}`}>
+                    {playlist.title?.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">{playlist.title}</h1>
+                  {playlist.description && (
+                    <p className="text-gray-400 text-lg mb-2">{playlist.description}</p>
+                  )}
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span>{playlistService.formatTrackCount(playlist.trackCount || playlist.musics?.length || 0)}</span>
+                    {playlist.duration && (
+                      <>
+                        <span>•</span>
+                        <span>{playlistService.formatDuration(playlist.duration)}</span>
+                      </>
+                    )}
+                    {playlist.plays && (
+                      <>
+                        <span>•</span>
+                        <span>{playlist.plays} plays</span>
+                      </>
+                    )}
+                    {playlist.tags && playlist.tags.length > 0 && (
+                      <>
+                        <span>•</span>
+                        <div className="flex gap-1">
+                          {playlist.tags.map((tag, index) => (
+                            <span key={index} className="px-2 py-1 bg-gray-700/50 text-gray-300 text-xs rounded-full">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">

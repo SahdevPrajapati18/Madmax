@@ -134,9 +134,20 @@ export default function Playlists() {
               <div key={playlist._id || playlist.id} className="group bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6 hover:bg-gray-700/80 transition-all duration-200">
                 {/* Playlist Cover */}
                 <div className="relative mb-4 aspect-square">
-                  <div className="w-full h-full bg-gradient-to-br from-green-500/20 to-purple-500/20 rounded-lg flex items-center justify-center text-4xl font-bold text-gray-400">
-                    {playlist.title?.charAt(0).toUpperCase()}
-                  </div>
+                  {playlist.coverImageUrl ? (
+                    <img
+                      src={playlist.coverImageUrl}
+                      alt={playlist.title}
+                      className="w-full h-full rounded-lg object-cover"
+                      onError={(e) => {
+                        e.target.src = `https://picsum.photos/400/400?random=${playlist._id || playlist.id}`;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-green-500/20 to-purple-500/20 rounded-lg flex items-center justify-center text-4xl font-bold text-gray-400">
+                      {playlist.title?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
 
                   {/* Play button overlay */}
                   <button className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg touch-target">

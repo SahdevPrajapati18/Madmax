@@ -4,56 +4,79 @@ import Home from './components/Home'
 import Register from './components/Register'
 import Login from './components/Login'
 import ArtistDashboard from './components/ArtistDashboard'
+import ArtistProfile from './components/ArtistProfile'
+import NewTrack from './components/NewTrack'
 
 export default function App() {
   const { user, logout, isAuthenticated } = useAuth();
 
   return (
-    <div>
-      <nav style={{ padding: 12, borderBottom: '1px solid #e5e7eb' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Link to="/" style={{ marginRight: 8 }}>Home</Link>
-            {isAuthenticated && (
-              <>
-                <Link to="/artist/dashboard" style={{ marginRight: 8 }}>Dashboard</Link>
-              </>
-            )}
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
+      {/* Navigation */}
+      <nav className="bg-gray-800 border-b border-gray-700 px-4 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link to="/" className="text-white text-xl font-bold hover:text-green-500 transition-colors">
+              MadMax
+            </Link>
+            <div className="hidden md:flex items-center gap-6">
+              <Link to="/" className="text-gray-300 hover:text-white transition-colors">
+                Home
+              </Link>
+              {isAuthenticated && (
+                <>
+                  <Link to="/artist/dashboard" className="text-gray-300 hover:text-white transition-colors">
+                    Dashboard
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
-          <div>
+
+          <div className="flex items-center gap-4">
             {isAuthenticated ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>Welcome, {user?.fullname?.firstName || user?.email}!</span>
+              <div className="flex items-center gap-4">
+                <span className="text-gray-300 text-sm">
+                  Welcome, {user?.fullname?.firstName || user?.email}!
+                </span>
                 <button
                   onClick={logout}
-                  style={{
-                    background: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 12px',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-semibold"
                 >
                   Logout
                 </button>
               </div>
             ) : (
-              <>
-                <Link to="/register" style={{ marginRight: 8 }}>Register</Link>
-                <Link to="/login" style={{ marginRight: 8 }}>Login</Link>
-              </>
+              <div className="flex items-center gap-4">
+                <Link
+                  to="/register"
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
+                  Register
+                </Link>
+                <Link
+                  to="/login"
+                  className="bg-green-500 hover:bg-green-400 text-black px-4 py-2 rounded-lg transition-colors font-semibold"
+                >
+                  Login
+                </Link>
+              </div>
             )}
           </div>
         </div>
       </nav>
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/artist/dashboard" element={<ArtistDashboard />} />
-      </Routes>
+      {/* Main Content */}
+      <main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/artist/dashboard" element={<ArtistDashboard />} />
+          <Route path="/artist/:artistId" element={<ArtistProfile />} />
+          <Route path="/new-track" element={<NewTrack />} />
+        </Routes>
+      </main>
     </div>
   )
 }

@@ -35,14 +35,7 @@ export default function RegularPlayer({
     <div className="fixed bottom-0 left-0 right-0 bg-gray-800/95 backdrop-blur-md border-t border-gray-700 z-50 
       h-[72px] sm:h-20 md:h-24 lg:h-28
       px-2 sm:px-4 md:px-6 lg:px-8">
-      <audio
-        ref={audioRef}
-        onTimeUpdate={onTimeUpdate}
-        onLoadedMetadata={onLoadedMetadata}
-        onEnded={onEnded}
-        onCanPlay={onCanPlay}
-        onLoadStart={onLoadStart}
-      />
+      {/* Audio element removed - now handled in parent MusicPlayer component */}
 
       <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto h-full gap-2 sm:gap-3 md:gap-4">
         {/* Left Section - Logo and Song Info */}

@@ -28,16 +28,26 @@ export default function MusicPlayer({
   // Handle song changes
   useEffect(() => {
     if (currentSong && audioRef.current) {
-      // Pause current audio and reset state
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      const currentSrc = audioRef.current.src;
 
-      // Set new source and load
-      audioRef.current.src = currentSong.musicUrl;
-      audioRef.current.load();
+      // Only reset and reload if it's actually a different song
+      if (currentSrc !== currentSong.musicUrl) {
+        // Pause current audio and reset state
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
 
-      // Auto-play if was playing
-      if (isPlaying) {
+        // Set new source and load
+        audioRef.current.src = currentSong.musicUrl;
+        audioRef.current.load();
+
+        // Auto-play if was playing
+        if (isPlaying) {
+          audioRef.current.play().catch(err => {
+            console.error('Error playing audio:', err);
+          });
+        }
+      } else if (isPlaying) {
+        // Same song, just ensure it's playing
         audioRef.current.play().catch(err => {
           console.error('Error playing audio:', err);
         });
@@ -49,10 +59,15 @@ export default function MusicPlayer({
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) {
-        audioRef.current.play().catch(err => {
-          console.error('Error playing audio:', err);
-        });
+        // Ensure audio continues from current position
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(err => {
+            console.error('Error playing audio:', err);
+          });
+        }
       } else {
+        // Just pause - don't reset currentTime
         audioRef.current.pause();
       }
     }
@@ -72,14 +87,77 @@ export default function MusicPlayer({
     }
   }, [isLoop]);
 
-  // Cleanup timeout on unmount
+  // Handle visibility changes (tab switching, window focus)
   useEffect(() => {
-    return () => {
-      if (seekTimeoutRef.current) {
-        clearTimeout(seekTimeoutRef.current);
+    const handleVisibilityChange = () => {
+      if (!document.hidden && audioRef.current && isPlaying) {
+        // Resume playback when tab becomes visible
+        audioRef.current.play().catch(err => {
+          console.log('Audio play interrupted when tab visible:', err);
+        });
       }
     };
-  }, []);
+
+    const handleFocus = () => {
+      if (audioRef.current && isPlaying) {
+        audioRef.current.play().catch(err => {
+          console.log('Audio play interrupted on focus:', err);
+        });
+      }
+    };
+
+    const handleBlur = () => {
+      // Don't interfere with pause state on blur
+      // Let the audio continue playing in background
+      if (audioRef.current && isPlaying) {
+        audioRef.current.play().catch(err => {
+          console.log('Audio play interrupted on blur:', err);
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [isPlaying]);
+
+  // Handle full screen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (audioRef.current && isPlaying) {
+        // Ensure audio continues playing when full screen state changes
+        audioRef.current.play().catch(err => {
+          console.log('Audio play interrupted by full screen change:', err);
+          // If play fails, try again after a short delay
+          setTimeout(() => {
+            if (audioRef.current && isPlaying) {
+              audioRef.current.play().catch(err => {
+                console.log('Retry audio play failed:', err);
+              });
+            }
+          }, 100);
+        });
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, [isPlaying]);
 
   const togglePlay = () => {
     if (onTogglePlay) {
@@ -89,7 +167,14 @@ export default function MusicPlayer({
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
+      // Only update state if there's a significant time difference
+      // to avoid unnecessary re-renders
+      const audioTime = audioRef.current.currentTime;
+      const timeDiff = Math.abs(audioTime - currentTime);
+
+      if (timeDiff > 0.1) {
+        setCurrentTime(audioTime);
+      }
     }
   };
 
@@ -127,6 +212,15 @@ export default function MusicPlayer({
     const immediateSeekTime = (e.target.value / 100) * duration;
     setCurrentTime(immediateSeekTime);
   }, [duration]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (seekTimeoutRef.current) {
+        clearTimeout(seekTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleVolumeChange = (e) => {
     const newVolume = e.target.value / 100;
@@ -186,61 +280,62 @@ export default function MusicPlayer({
     return null;
   }
 
-  if (isFullscreen) {
-    return (
-      <FullscreenPlayer
-        currentSong={currentSong}
-        isPlaying={isPlaying}
-        isLoop={isLoop}
-        isLoading={isLoading}
-        currentTime={currentTime}
-        duration={duration}
-        progressPercentage={progressPercentage}
-        formatTime={formatTime}
-        onTogglePlay={togglePlay}
-        onPrevious={onPrevious}
-        onNext={onNext}
-        onToggleLoop={toggleLoop}
-        onSeek={handleSeek}
-        onToggleFullscreen={toggleFullscreen}
-        onClosePlayer={closePlayer}
-        audioRef={audioRef}
+  return (
+    <div className="relative">
+      {/* Single Audio Element - Shared between both players */}
+      <audio
+        ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
         onCanPlay={handleCanPlay}
         onLoadStart={handleLoadStart}
+        style={{ display: 'none' }}
       />
-    );
-  }
 
-  return (
-    <RegularPlayer
-      currentSong={currentSong}
-      playlist={playlist}
-      isPlaying={isPlaying}
-      isLoop={isLoop}
-      currentTime={currentTime}
-      duration={duration}
-      progressPercentage={progressPercentage}
-      volume={volume}
-      isMuted={isMuted}
-      formatTime={formatTime}
-      onTogglePlay={togglePlay}
-      onPrevious={onPrevious}
-      onNext={onNext}
-      onToggleLoop={toggleLoop}
-      onSeek={handleSeek}
-      onVolumeChange={handleVolumeChange}
-      onMuteClick={handleMuteClick}
-      onClosePlayer={closePlayer}
-      onToggleFullscreen={toggleFullscreen}
-      audioRef={audioRef}
-      onTimeUpdate={handleTimeUpdate}
-      onLoadedMetadata={handleLoadedMetadata}
-      onEnded={handleEnded}
-      onCanPlay={handleCanPlay}
-      onLoadStart={handleLoadStart}
-    />
+      {isFullscreen ? (
+        <FullscreenPlayer
+          currentSong={currentSong}
+          isPlaying={isPlaying}
+          isLoop={isLoop}
+          isLoading={isLoading}
+          currentTime={currentTime}
+          duration={duration}
+          progressPercentage={progressPercentage}
+          formatTime={formatTime}
+          onTogglePlay={togglePlay}
+          onPrevious={onPrevious}
+          onNext={onNext}
+          onToggleLoop={toggleLoop}
+          onSeek={handleSeek}
+          onToggleFullscreen={toggleFullscreen}
+          onClosePlayer={closePlayer}
+          audioRef={audioRef}
+        />
+      ) : (
+        <RegularPlayer
+          currentSong={currentSong}
+          playlist={playlist}
+          isPlaying={isPlaying}
+          isLoop={isLoop}
+          currentTime={currentTime}
+          duration={duration}
+          progressPercentage={progressPercentage}
+          volume={volume}
+          isMuted={isMuted}
+          formatTime={formatTime}
+          onTogglePlay={togglePlay}
+          onPrevious={onPrevious}
+          onNext={onNext}
+          onToggleLoop={toggleLoop}
+          onSeek={handleSeek}
+          onVolumeChange={handleVolumeChange}
+          onMuteClick={handleMuteClick}
+          onClosePlayer={closePlayer}
+          onToggleFullscreen={toggleFullscreen}
+          audioRef={audioRef}
+        />
+      )}
+    </div>
   );
 }

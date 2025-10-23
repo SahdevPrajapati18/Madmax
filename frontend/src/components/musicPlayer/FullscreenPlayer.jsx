@@ -30,15 +30,7 @@ export default function FullscreenPlayer({
   return (
     <div className="fixed inset-0 bg-gradient-to-b from-gray-900 via-black to-gray-950 z-[9999] 
       flex flex-col text-white overflow-hidden">
-      {/* Hidden Audio Element */}
-      <audio
-        ref={audioRef}
-        onTimeUpdate={onTimeUpdate}
-        onLoadedMetadata={onLoadedMetadata}
-        onEnded={onEnded}
-        onCanPlay={onCanPlay}
-        onLoadStart={onLoadStart}
-      />
+      {/* Audio element removed - now handled in parent MusicPlayer component */}
 
       {/* Header */}
       <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 bg-black/30 backdrop-blur-md">

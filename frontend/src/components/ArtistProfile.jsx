@@ -88,9 +88,10 @@ export default function ArtistProfile() {
 
   // Check if current user is the owner of the song (artist)
   const isSongOwner = (song) => {
-    // For now, we'll assume all songs in artist profile belong to the current artist
+    // For security, only allow edit/delete if viewing your own profile
     // In a real app, you'd check song.artistId === currentUser.id
-    return true; // Placeholder - implement proper ownership check
+    // For now, we'll disable edit/delete for all public profiles
+    return false; // Disable edit/delete for security
   };
 
   const handleEditSong = (song) => {

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import MusicPlayer from './MusicPlayer';
 import { useAuth } from './AuthContext';
 import playlistService from '../services/playlistService';
 
@@ -104,8 +103,32 @@ export default function Home() {
     setFilteredSongs(filtered);
   };
 
+  const handlePlayPlaylist = async (playlist) => {
+    try {
+      // If playlist has musics, play the first song
+      if (playlist.musics && playlist.musics.length > 0) {
+        // For now, we'll play the first song in the playlist
+        // In a real implementation, you might want to fetch the full playlist data first
+        const firstSong = playlist.musics[0];
+        if (firstSong && firstSong.musicUrl) {
+          playSong(firstSong, playlist.musics, 0);
+        } else {
+          // If the playlist data doesn't have full music objects, fetch the playlist details first
+          const playlistDetails = await playlistService.getPlaylistById(playlist._id || playlist.id);
+          if (playlistDetails.playlist && playlistDetails.playlist.musics && playlistDetails.playlist.musics.length > 0) {
+            playSong(playlistDetails.playlist.musics[0], playlistDetails.playlist.musics, 0);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error playing playlist:', error);
+    }
+  };
+
   const handleArtistClick = (artistId, artistName) => {
-    navigate(`/artist/${artistId}`, { state: { artistName } });
+    if (artistId) {
+      navigate(`/artist/${artistId}`, { state: { artistName } });
+    }
   };
 
   // Group songs by artist for the artist search view
@@ -414,6 +437,20 @@ export default function Home() {
                       <div className={`w-full h-full bg-gradient-to-br from-green-500/20 to-purple-500/20 rounded-md flex items-center justify-center text-lg font-bold text-gray-400 ${playlist.coverImageUrl ? 'hidden' : ''}`}>
                         {playlist.title?.charAt(0).toUpperCase()}
                       </div>
+
+                      {/* Play button overlay */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handlePlayPlaylist(playlist);
+                        }}
+                        className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md touch-target"
+                      >
+                        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </button>
                     </div>
                     <div className="space-y-1">
                       <h3 className="text-white font-semibold text-sm truncate leading-tight">{playlist.title}</h3>
@@ -474,6 +511,20 @@ export default function Home() {
                     <div className={`w-full h-full bg-gradient-to-br from-green-500/20 to-purple-500/20 rounded-md flex items-center justify-center text-lg font-bold text-gray-400 ${playlist.coverImageUrl ? 'hidden' : ''}`}>
                       {playlist.title?.charAt(0).toUpperCase()}
                     </div>
+
+                    {/* Play button overlay */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handlePlayPlaylist(playlist);
+                      }}
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md touch-target"
+                    >
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </button>
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-white font-semibold text-sm truncate leading-tight">{playlist.title}</h3>

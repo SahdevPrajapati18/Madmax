@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import Logo from './Logo';
 
 export default function ResponsiveHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -46,10 +47,13 @@ export default function ResponsiveHeader() {
           <div className="flex items-center">
             <Link
               to="/"
-              className="text-white text-xl sm:text-2xl font-black hover:text-green-400 transition-colors"
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               onClick={closeMobileMenu}
             >
-              MadMax
+              <Logo size="small" className="w-10 h-8" />
+              <span className="text-white text-lg sm:text-xl font-black hover:text-green-400 transition-colors">
+                MadMax
+              </span>
             </Link>
           </div>
 
@@ -150,6 +154,12 @@ export default function ResponsiveHeader() {
           isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
         }`}>
           <div className="py-4 space-y-3 border-t border-gray-700">
+            {/* Mobile Logo */}
+            <div className="flex items-center justify-center pb-2 mb-2 border-b border-gray-600">
+              <Logo size="small" className="opacity-90" />
+              <span className="text-white text-lg font-black ml-2">MadMax</span>
+            </div>
+
             {/* Mobile Navigation Links */}
             {filteredNavItems.map((item) => (
               <Link

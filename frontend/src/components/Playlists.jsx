@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 import playlistService from '../services/playlistService';
 
 export default function Playlists() {
@@ -7,11 +8,42 @@ export default function Playlists() {
   const [publicPlaylists, setPublicPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('my');
+  const { playSong } = useAuth();
 
   useEffect(() => {
-    fetchPlaylists();
-    fetchPublicPlaylists();
+    const loadPlaylists = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([fetchPlaylists(), fetchPublicPlaylists()]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPlaylists();
   }, []);
+
+  const handlePlayPlaylist = async (playlist) => {
+    try {
+      // If playlist has musics, play the first song
+      if (playlist.musics && playlist.musics.length > 0) {
+        // For now, we'll play the first song in the playlist
+        // In a real implementation, you might want to fetch the full playlist data first
+        const firstSong = playlist.musics[0];
+        if (firstSong && firstSong.musicUrl) {
+          playSong(firstSong, playlist.musics, 0);
+        } else {
+          // If the playlist data doesn't have full music objects, fetch the playlist details first
+          const playlistDetails = await playlistService.getPlaylistById(playlist._id || playlist.id);
+          if (playlistDetails.playlist && playlistDetails.playlist.musics && playlistDetails.playlist.musics.length > 0) {
+            playSong(playlistDetails.playlist.musics[0], playlistDetails.playlist.musics, 0);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error playing playlist:', error);
+    }
+  };
 
   const fetchPlaylists = async () => {
     try {
@@ -28,8 +60,6 @@ export default function Playlists() {
       setPublicPlaylists(response.playlists || []);
     } catch (error) {
       console.error('Error fetching public playlists:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -150,7 +180,14 @@ export default function Playlists() {
                   )}
 
                   {/* Play button overlay */}
-                  <button className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg touch-target">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handlePlayPlaylist(playlist);
+                    }}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg touch-target"
+                  >
                     <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z"/>
                     </svg>

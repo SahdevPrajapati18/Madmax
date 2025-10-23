@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import MusicPlayer from './MusicPlayer';
+import { useAuth } from './AuthContext';
+import playlistService from '../services/playlistService';
 
 export default function ArtistDashboard() {
+  const { user, isAuthenticated, currentSong, currentPlaylist, currentSongIndex, playSong } = useAuth();
   const [musics, setMusics] = useState([{
     id: 1,
     title: "Midnight Dreams",
@@ -121,19 +123,32 @@ export default function ArtistDashboard() {
     monthlyEarnings: 2500
   };
 
+  const handlePlayPlaylist = async (playlist) => {
+    try {
+      // If playlist has musics, play the first song
+      if (playlist.musics && playlist.musics.length > 0) {
+        const firstSong = playlist.musics[0];
+        if (firstSong && firstSong.musicUrl) {
+          playSong(firstSong, playlist.musics, 0);
+        } else {
+          // If the playlist data doesn't have full music objects, fetch the playlist details first
+          const playlistDetails = await playlistService.getPlaylistById(playlist._id || playlist.id);
+          if (playlistDetails.playlist && playlistDetails.playlist.musics && playlistDetails.playlist.musics.length > 0) {
+            playSong(playlistDetails.playlist.musics[0], playlistDetails.playlist.musics, 0);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error playing playlist:', error);
+    }
+  };
+
   const formatNumber = (num) => {
     if (num === null || num === undefined || isNaN(num)) return '0';
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return num.toString();
   };
-
-  // Music Player Functions
-  const playSong = (song, songs, index) => {
-    // setCurrentSong(song);
-    // setCurrentSongIndex(index);
-  };
-
   const playNext = () => {
     // if (playlist.length === 0) return;
 
@@ -352,6 +367,20 @@ export default function ArtistDashboard() {
                           <div className={`w-full h-full bg-gradient-to-br from-green-500/20 to-purple-500/20 rounded-lg flex items-center justify-center text-lg sm:text-2xl group-hover:scale-105 transition-transform ${playlist.coverImageUrl ? 'hidden' : ''}`}>
                             {playlist.title?.charAt(0).toUpperCase()}
                           </div>
+
+                          {/* Play button overlay */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handlePlayPlaylist(playlist);
+                            }}
+                            className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg touch-target"
+                          >
+                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </button>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">

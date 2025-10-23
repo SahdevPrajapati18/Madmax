@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import playlistService from '../services/playlistService';
 
 export default function UserDashboard() {
   const { user, playSong } = useAuth();
@@ -41,7 +42,6 @@ export default function UserDashboard() {
     }).catch(err => {
       console.error('Error fetching music:', err);
       setMusics([]);
-      setPlaylist([]);
     }).finally(() => {
       setLoading(false);
     });
@@ -294,6 +294,20 @@ export default function UserDashboard() {
                           <div className={`w-full h-full bg-gradient-to-br from-green-500/20 to-purple-500/20 rounded-lg flex items-center justify-center text-lg sm:text-2xl group-hover:scale-105 transition-transform ${playlist.coverImageUrl ? 'hidden' : ''}`}>
                             {playlist.title?.charAt(0).toUpperCase()}
                           </div>
+
+                          {/* Play button overlay */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handlePlayPlaylist(playlist);
+                            }}
+                            className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg touch-target"
+                          >
+                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </button>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">

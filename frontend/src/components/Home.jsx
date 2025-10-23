@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import playlistService from '../services/playlistService';
 import { useHomeData, useSearch } from './Home/hooks';
 import HeroSection from './Home/HeroSection';
 import SearchBar from './Home/SearchBar';
@@ -71,7 +72,7 @@ export default function Home() {
             playlistLoading={playlistLoading}
             isAuthenticated={isAuthenticated}
             playSong={playSong}
-            playlistService={require('../services/playlistService').default}
+            playlistService={playlistService}
           />
         )}
 
@@ -79,7 +80,7 @@ export default function Home() {
           publicPlaylists={publicPlaylists}
           playlistLoading={playlistLoading}
           playSong={playSong}
-          playlistService={require('../services/playlistService').default}
+          playlistService={playlistService}
         />
       </div>
     </div>

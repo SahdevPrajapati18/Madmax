@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import MusicPlayer from './musicPlayer/MusicPlayer';
-import { useArtistSongs, useMusicPlayer, useSongManagement } from './artistProfile/hooks';
+import { useAuth } from './AuthContext';
+import { useArtistSongs, useSongManagement } from './artistProfile/hooks';
 import ArtistHeader from './artistProfile/ArtistHeader';
 import TrackList from './artistProfile/TrackList';
 
@@ -12,7 +13,7 @@ export default function ArtistProfile() {
   const [artistName, setArtistName] = useState(location.state?.artistName || 'Artist');
 
   const { artistSongs, loading, totalPlays, refetch } = useArtistSongs(artistId);
-  const { currentSong, currentIndex, playSong, playNext, playPrevious, playAll, stopMusic } = useMusicPlayer();
+  const { currentSong, currentPlaylist, currentSongIndex, isPlaying, playSong, playNext, playPrevious, togglePlay, stopMusic } = useAuth();
   const {
     editingSong,
     editForm,
@@ -24,6 +25,26 @@ export default function ArtistProfile() {
     handleDeleteSong,
     handleCancelEdit
   } = useSongManagement();
+
+  const handlePlayPlaylist = async (playlist) => {
+    try {
+      // If playlist has musics, play the first song
+      if (playlist.musics && playlist.musics.length > 0) {
+        const firstSong = playlist.musics[0];
+        if (firstSong && firstSong.musicUrl) {
+          playSong(firstSong, playlist.musics, 0);
+        } else {
+          // If the playlist data doesn't have full music objects, fetch the playlist details first
+          const playlistDetails = await playlistService.getPlaylistById(playlist._id || playlist.id);
+          if (playlistDetails.playlist && playlistDetails.playlist.musics && playlistDetails.playlist.musics.length > 0) {
+            playSong(playlistDetails.playlist.musics[0], playlistDetails.playlist.musics, 0);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error playing playlist:', error);
+    }
+  };
 
   useEffect(() => {
     // Set artist name from first song if not provided
@@ -74,7 +95,11 @@ export default function ArtistProfile() {
           artistName={artistName}
           totalPlays={totalPlays}
           songCount={artistSongs.length}
-          onPlayAll={() => playAll(artistSongs)}
+          onPlayAll={() => {
+            if (artistSongs.length > 0) {
+              playSong(artistSongs[0], artistSongs, 0);
+            }
+          }}
           hasSongs={artistSongs.length > 0}
         />
 
@@ -82,7 +107,7 @@ export default function ArtistProfile() {
           artistSongs={artistSongs}
           loading={loading}
           currentSong={currentSong}
-          currentIndex={currentIndex}
+          currentIndex={currentSongIndex}
           onPlaySong={(song, index) => playSong(song, artistSongs, index)}
           editingSong={editingSong}
           editForm={editForm}
@@ -100,9 +125,12 @@ export default function ArtistProfile() {
       {currentSong && (
         <MusicPlayer
           currentSong={currentSong}
-          onNext={currentIndex < artistSongs.length - 1 ? () => playNext(artistSongs) : null}
-          onPrevious={currentIndex > 0 ? () => playPrevious(artistSongs) : null}
+          onNext={currentSongIndex < artistSongs.length - 1 ? () => playNext() : null}
+          onPrevious={currentSongIndex > 0 ? () => playPrevious() : null}
           playlist={artistSongs}
+          isPlaying={isPlaying}
+          onTogglePlay={togglePlay}
+          onStop={stopMusic}
         />
       )}
     </div>

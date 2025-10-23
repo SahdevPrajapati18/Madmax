@@ -37,33 +37,27 @@ export default function RegularPlayer({
       px-2 sm:px-4 md:px-6 lg:px-8">
       {/* Audio element removed - now handled in parent MusicPlayer component */}
 
-      <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto h-full gap-2 sm:gap-3 md:gap-4">
-        {/* Left Section - Logo and Song Info */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          {/* Logo */}
-          <Logo size="small" className="flex-shrink-0 opacity-80 hover:opacity-100 transition-opacity" />
-
-          {/* Song Info */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 max-w-[15%] sm:max-w-xs">
-            <img
-              src={currentSong.coverImageUrl}
-              alt={currentSong.title}
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 
+      <div className="flex items-center justify-evenly w-full max-w-screen-xl mx-auto h-full gap-2 sm:gap-3 md:gap-4">
+        {/* Song Info */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1  sm:max-w-xs">
+          <img
+            src={currentSong.coverImageUrl}
+            alt={currentSong.title}
+            className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 
                 rounded-md sm:rounded-lg object-cover shadow-lg flex-shrink-0"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="text-white text-xs sm:text-sm md:text-base lg:text-lg font-medium truncate">
-                {currentSong.title}
-              </div>
-              <div className="text-gray-400 text-[10px] sm:text-xs md:text-sm truncate hover:text-white cursor-pointer transition-colors">
-                {currentSong.artist}
-              </div>
-              {playlist.length <= 1 && (
-                <div className="text-green-500 text-[9px] sm:text-[10px] mt-0.5 hidden sm:block">
-                  Single Song
-                </div>
-              )}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="text-white text-xs sm:text-sm md:text-base lg:text-lg font-medium truncate">
+              {currentSong.title}
             </div>
+            <div className="text-gray-400 text-[10px] sm:text-xs md:text-sm truncate hover:text-white cursor-pointer transition-colors">
+              {currentSong.artist}
+            </div>
+            {playlist.length <= 1 && (
+              <div className="text-green-500 text-[9px] sm:text-[10px] mt-0.5 hidden sm:block">
+                Single Song
+              </div>
+            )}
           </div>
         </div>
 
@@ -108,7 +102,7 @@ export default function RegularPlayer({
               aria-label="Enter fullscreen"
             >
               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
               </svg>
             </button>
 
@@ -120,7 +114,7 @@ export default function RegularPlayer({
               aria-label="Close player"
             >
               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
               </svg>
             </button>
           </div>

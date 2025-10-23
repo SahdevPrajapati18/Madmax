@@ -49,7 +49,7 @@ export default function PlaylistDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black py-6">
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black py-6 pb-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-gray-400">
             <div className="w-12 h-12 border-4 border-gray-800 border-t-green-500 rounded-full animate-spin mb-4"></div>
@@ -62,7 +62,7 @@ export default function PlaylistDetail() {
 
   if (!playlist) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center pb-24">
         <div className="text-center text-gray-400">
           <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
@@ -77,7 +77,7 @@ export default function PlaylistDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black py-6">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pt-6 pb-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -252,8 +252,6 @@ export default function PlaylistDetail() {
           </div>
         )}
 
-        {/* Bottom spacing for mobile player */}
-        <div className="h-24"></div>
       </div>
     </div>
   );

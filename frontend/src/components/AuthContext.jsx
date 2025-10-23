@@ -1,5 +1,6 @@
-import { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { useKeyboardShortcuts } from './musicPlayer/useKeyboardShortcuts';
 
 const AuthContext = createContext();
 
@@ -132,39 +133,42 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Global music functions
-  const playSong = (song, playlist = [], index = -1) => {
+  const playSong = useCallback((song, playlist = [], index = -1) => {
     setCurrentSong(song);
     setCurrentPlaylist(playlist);
     setCurrentSongIndex(index);
     setIsPlaying(true);
-  };
+  }, []);
 
-  const playNext = () => {
+  const playNext = useCallback(() => {
     if (currentPlaylist.length === 0 || currentSongIndex === -1) return;
 
     const nextIndex = (currentSongIndex + 1) % currentPlaylist.length;
     setCurrentSong(currentPlaylist[nextIndex]);
     setCurrentSongIndex(nextIndex);
-  };
+  }, [currentPlaylist, currentSongIndex]);
 
-  const playPrevious = () => {
+  const playPrevious = useCallback(() => {
     if (currentPlaylist.length === 0 || currentSongIndex === -1) return;
 
     const prevIndex = currentSongIndex === 0 ? currentPlaylist.length - 1 : currentSongIndex - 1;
     setCurrentSong(currentPlaylist[prevIndex]);
     setCurrentSongIndex(prevIndex);
-  };
+  }, [currentPlaylist, currentSongIndex]);
 
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     setIsPlaying(!isPlaying);
-  };
+  }, [isPlaying]);
 
-  const stopMusic = () => {
+  const stopMusic = useCallback(() => {
     setCurrentSong(null);
     setCurrentPlaylist([]);
     setCurrentSongIndex(-1);
     setIsPlaying(false);
-  };
+  }, []);
+
+  // Setup global keyboard shortcuts
+  useKeyboardShortcuts(togglePlay, playNext, playPrevious);
 
   const value = {
     user,

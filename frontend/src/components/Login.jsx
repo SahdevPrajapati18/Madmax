@@ -26,9 +26,14 @@ export default function Login() {
 
     if (result.success) {
       // Redirect based on user role
+      console.log('Login successful, user role:', result.user.role);
+      console.log('User artistId:', result.user.artistId);
+      console.log('Redirecting to:', result.user.role === 'artist' ? '/dashboard' : '/');
       if (result.user.role === 'artist') {
+        console.log('Redirecting artist to dashboard');
         navigate('/dashboard');
       } else {
+        console.log('Redirecting user to home');
         navigate('/');
       }
     } else {

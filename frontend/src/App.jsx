@@ -32,11 +32,11 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={isArtist ? <ArtistDashboard /> : <UserDashboard />} />
-          <Route path="/artist/:artistId" element={<ArtistProfile />} />
           <Route path="/new-track" element={<NewTrack />} />
           <Route path="/playlists" element={<Playlists />} />
           <Route path="/playlists/create" element={<CreatePlaylist />} />
           <Route path="/playlists/:playlistId" element={<PlaylistDetail />} />
+          <Route path="/artist/:artistId" element={<ArtistProfile />} />
         </Routes>
       </main>
 

@@ -26,6 +26,21 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
+  useEffect(() => {
+    // Debug: Log user changes and check for unwanted redirects
+    if (user) {
+      console.log('AuthContext user updated:', user);
+      console.log('User role:', user.role);
+      console.log('User artistId:', user.artistId);
+      console.log('Current location:', window.location.pathname);
+
+      // Check if user is being redirected to wrong location
+      if (user?.role === 'artist' && !window.location.pathname.startsWith('/dashboard')) {
+        window.location.replace('/dashboard');
+      }
+    }
+  }, [user]);
+
   const checkAuthStatus = async () => {
     try {
       const response = await axios.get('http://localhost:3000/api/auth/me', {
@@ -56,10 +71,13 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (response.data && response.data.user) {
+        console.log('AuthContext login success, user:', response.data.user);
+        console.log('User role:', response.data.user.role);
         setUser(response.data.user);
         return { success: true, user: response.data.user };
       }
     } catch (error) {
+      console.error('AuthContext login error:', error);
       return {
         success: false,
         error: error.response?.data?.message || 'Login failed'

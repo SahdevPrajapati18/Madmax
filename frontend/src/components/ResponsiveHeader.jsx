@@ -68,6 +68,9 @@ export default function ResponsiveHeader() {
                     ? 'text-green-400'
                     : 'text-gray-300'
                 }`}
+                onClick={(e) => {
+                  console.log('Navigation clicked:', item.name, 'to:', item.href);
+                }}
               >
                 {item.name}
               </Link>

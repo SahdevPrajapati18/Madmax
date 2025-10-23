@@ -172,7 +172,9 @@ export default function ArtistDashboard() {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-2">Welcome back, Artist!</h1>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-2">
+                Welcome back, {user?.fullname?.firstName || user?.email?.split('@')[0] || 'Artist'}!
+              </h1>
               <p className="text-base sm:text-lg text-gray-400">Here's what's happening with your music today.</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">

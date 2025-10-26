@@ -222,3 +222,20 @@ export async function getCurrentUser(req, res) {
         return res.status(500).json({ message: 'Internal server error', error: err.message });
     }
 }
+
+export async function logout(req, res) {
+    try {
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none'
+        });
+
+        res.json({
+            message: 'Logout successful'
+        });
+    } catch (err) {
+        console.error('Logout error:', err);
+        return res.status(500).json({ message: 'Internal server error', error: err.message });
+    }
+}

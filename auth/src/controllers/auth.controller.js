@@ -202,19 +202,23 @@ export async function googleAuthCallback(req, res) {
     }
 }
 
-export async function logout(req, res) {
+export async function getCurrentUser(req, res) {
     try {
-        res.clearCookie('token', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none'
-        });
+        // The user should be available in req.user from the auth middleware
+        if (!req.user) {
+            return res.status(401).json({ message: 'Not authenticated' });
+        }
 
         res.json({
-            message: 'Logout successful'
+            user: {
+                id: req.user._id,
+                email: req.user.email,
+                fullname: req.user.fullname,
+                role: req.user.role
+            }
         });
     } catch (err) {
-        console.error('Logout error:', err);
+        console.error('Get current user error:', err);
         return res.status(500).json({ message: 'Internal server error', error: err.message });
     }
 }

@@ -16,7 +16,7 @@ const app = express();
 // ✅ Basic middlewares
 app.use(
   cors({
-    origin: "https://madmax-nine.vercel.app",
+    origin: ["https://madmax-production.up.railway.app", "https://madmax-nine.vercel.app"],
     credentials: true,
   })
 );

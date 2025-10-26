@@ -1,14 +1,10 @@
-import axios from 'axios';
-
-const API_BASE_URL = `${import.meta.env.VITE_MUSIC_API}/api/music`;
+import API from './api.js';
 
 class PlaylistService {
     // Get user's playlists
     async getPlaylists() {
         try {
-            const response = await axios.get(`${API_BASE_URL}/playlists`, {
-                withCredentials: true
-            });
+            const response = await API.get('/music/playlists');
             return response.data;
         } catch (error) {
             console.error('Error fetching playlists:', error);
@@ -19,7 +15,7 @@ class PlaylistService {
     // Get public playlists
     async getPublicPlaylists() {
         try {
-            const response = await axios.get(`${API_BASE_URL}/public-playlists`);
+            const response = await API.get('/music/public-playlists');
             return response.data;
         } catch (error) {
             console.error('Error fetching public playlists:', error);
@@ -30,9 +26,7 @@ class PlaylistService {
     // Get specific playlist by ID
     async getPlaylistById(playlistId) {
         try {
-            const response = await axios.get(`${API_BASE_URL}/playlist/${playlistId}`, {
-                withCredentials: true
-            });
+            const response = await API.get(`/music/playlist/${playlistId}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching playlist:', error);
@@ -43,9 +37,7 @@ class PlaylistService {
     // Create new playlist
     async createPlaylist(playlistData) {
         try {
-            const response = await axios.post(`${API_BASE_URL}/playlist`, playlistData, {
-                withCredentials: true
-            });
+            const response = await API.post('/music/playlist', playlistData);
             return response.data;
         } catch (error) {
             console.error('Error creating playlist:', error);
@@ -56,9 +48,7 @@ class PlaylistService {
     // Update playlist
     async updatePlaylist(playlistId, playlistData) {
         try {
-            const response = await axios.put(`${API_BASE_URL}/playlist/${playlistId}`, playlistData, {
-                withCredentials: true
-            });
+            const response = await API.put(`/music/playlist/${playlistId}`, playlistData);
             return response.data;
         } catch (error) {
             console.error('Error updating playlist:', error);
@@ -69,9 +59,7 @@ class PlaylistService {
     // Delete playlist
     async deletePlaylist(playlistId) {
         try {
-            const response = await axios.delete(`${API_BASE_URL}/playlist/${playlistId}`, {
-                withCredentials: true
-            });
+            const response = await API.delete(`/music/playlist/${playlistId}`);
             return response.data;
         } catch (error) {
             console.error('Error deleting playlist:', error);
@@ -82,9 +70,7 @@ class PlaylistService {
     // Add music to playlist
     async addToPlaylist(playlistId, musicId) {
         try {
-            const response = await axios.post(`${API_BASE_URL}/playlist/${playlistId}/add`, { musicId }, {
-                withCredentials: true
-            });
+            const response = await API.post(`/music/playlist/${playlistId}/add`, { musicId });
             return response.data;
         } catch (error) {
             console.error('Error adding to playlist:', error);
@@ -95,9 +81,7 @@ class PlaylistService {
     // Remove music from playlist
     async removeFromPlaylist(playlistId, musicId) {
         try {
-            const response = await axios.post(`${API_BASE_URL}/playlist/${playlistId}/remove`, { musicId }, {
-                withCredentials: true
-            });
+            const response = await API.post(`/music/playlist/${playlistId}/remove`, { musicId });
             return response.data;
         } catch (error) {
             console.error('Error removing from playlist:', error);
@@ -108,9 +92,7 @@ class PlaylistService {
     // Get all music for adding to playlists
     async getAllMusic() {
         try {
-            const response = await axios.get(`${API_BASE_URL}`, {
-                withCredentials: true
-            });
+            const response = await API.get('/music');
             return response.data;
         } catch (error) {
             console.error('Error fetching music:', error);

@@ -11,36 +11,31 @@ export async function login(req, res) {
         const user = await userModel.findOne({ email });
 
         if (!user || !user.password) {
-            return res.status(400).json({ message: 'Invalid email or password' });
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
-            return res.status(400).json({ message: 'Invalid email or password' });
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({
+        // Payload for JWT
+        const payload = {
             id: user._id,
+            email: user.email,
             role: user.role,
+            artistId: user.artistId || null,
             fullname: user.fullname
-        }, config.JWT_SECRET, { expiresIn: '2d' });
+        };
 
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: true,        // Always true for HTTPS (Vercel/Railway)
-            sameSite: 'none',    // Required for cross-site cookie sharing
-            maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
-        });
+        // Sign JWT
+        const token = jwt.sign(payload, config.JWT_SECRET, { expiresIn: '1d' });
 
         res.json({
             message: 'Login successful',
-            user: {
-                id: user._id,
-                email: user.email,
-                fullname: user.fullname,
-                role: user.role
-            }
+            token,
+            user: payload
         });
     } catch (err) {
         console.error('Login error:', err);
@@ -51,7 +46,7 @@ export async function login(req, res) {
 
 export async function register(req, res) {
     try {
-        const { email, password, fullname = {},role="user" } = req.body || {};
+        const { email, password, fullname = {}, role = "user" } = req.body || {};
         const { firstName, lastName } = fullname;
 
         const isUserAlreadyExists = await userModel.findOne({ email });
@@ -72,36 +67,29 @@ export async function register(req, res) {
             role
         });
 
-        const token = jwt.sign({
-            id: user._id, 
+        // Payload for JWT
+        const payload = {
+            id: user._id,
+            email: user.email,
             role: user.role,
+            artistId: user.artistId || null,
             fullname: user.fullname
-        }, config.JWT_SECRET, { expiresIn: '2d' });
+        };
 
-         
+        // Sign JWT
+        const token = jwt.sign(payload, config.JWT_SECRET, { expiresIn: '1d' });
+
         await publishToQueue("user_created", {
-                id: user._id,
-                email: user.email,
-                fullname: user.fullname,
-                role: user.role
-        });
-
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: true,        // Always true for HTTPS (Vercel/Railway)
-            sameSite: 'none',    // Required for cross-site cookie sharing
-            maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
+            id: user._id,
+            email: user.email,
+            fullname: user.fullname,
+            role: user.role
         });
 
         return res.status(201).json({
             message: 'User created successfully',
-            user: {
-                id: user._id,
-                email: user.email,
-                fullname: user.fullname,
-                role: user.role,
-            },
             token,
+            user: payload
         });
     } catch (err) {
         console.error('Register error:', err);
@@ -112,13 +100,14 @@ export async function register(req, res) {
 export async function googleAuthCallback(req, res) {
     try {
         const user = req.user;
-        
+
         if (!user || !user.emails || !user.emails[0] || !user.name) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 message: 'Error processing Google authentication',
                 error: 'Invalid Google account data'
             });
         }
+
         const isUserAlreadyExists = await userModel.findOne({
             $or: [
                 { email: user.emails[0].value },
@@ -127,27 +116,23 @@ export async function googleAuthCallback(req, res) {
         });
 
         if (isUserAlreadyExists) {
-            const token = jwt.sign(
-                { id: isUserAlreadyExists._id,
+            // Payload for JWT
+            const payload = {
+                id: isUserAlreadyExists._id,
+                email: isUserAlreadyExists.email,
                 role: isUserAlreadyExists.role,
+                artistId: isUserAlreadyExists.artistId || null,
                 fullname: isUserAlreadyExists.fullname
-            }, 
-                config.JWT_SECRET, 
-                { expiresIn: '2d' }
-            );
+            };
 
-            if(isUserAlreadyExists.role === "artist"){
-                return res.redirect("https://madmax-nine.vercel.app/artist/dashboard");
+            // Sign JWT
+            const token = jwt.sign(payload, config.JWT_SECRET, { expiresIn: '1d' });
+
+            if (isUserAlreadyExists.role === "artist") {
+                return res.redirect(`https://madmax-nine.vercel.app/artist/dashboard?token=${token}`);
             }
 
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: true,        // Always true for HTTPS (Vercel/Railway)
-                sameSite: 'none',    // Required for cross-site cookie sharing
-                maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
-            });
-
-            res.redirect('https://madmax-nine.vercel.app')
+            return res.redirect(`https://madmax-nine.vercel.app?token=${token}`);
         }
 
         const newUser = await userModel.create({
@@ -157,6 +142,7 @@ export async function googleAuthCallback(req, res) {
                 firstName: user.name.givenName || '',
                 lastName: user.name.familyName || '',
             },
+            role: 'user' // Default role for new Google users
         });
 
         await publishToQueue("user_created", {
@@ -166,38 +152,24 @@ export async function googleAuthCallback(req, res) {
             role: newUser.role
         });
 
-        const token = jwt.sign(
-            { id: newUser._id,
+        // Payload for JWT
+        const payload = {
+            id: newUser._id,
+            email: newUser.email,
             role: newUser.role,
+            artistId: newUser.artistId || null,
             fullname: newUser.fullname
-       }, 
-            config.JWT_SECRET, 
-            { expiresIn: '2d' }
-        );
+        };
 
-        
-        
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: true,        // Always true for HTTPS (Vercel/Railway)
-            sameSite: 'none',    // Required for cross-site cookie sharing
-            maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
-        });
+        // Sign JWT
+        const token = jwt.sign(payload, config.JWT_SECRET, { expiresIn: '1d' });
 
-        return res.status(201).json({
-            message: 'User created successfully',
-            user: {
-                id: newUser._id,
-                email: newUser.email,
-                fullname: newUser.fullname,
-                role: newUser.role
-            }
-        });
+        return res.redirect(`https://madmax-nine.vercel.app?token=${token}`);
     } catch (err) {
         console.error('Google auth callback error:', err);
-        return res.status(500).json({ 
+        return res.status(500).json({
             message: 'Error processing Google authentication',
-            error: err.message 
+            error: err.message
         });
     }
 }
@@ -206,15 +178,16 @@ export async function getCurrentUser(req, res) {
     try {
         // The user should be available in req.user from the auth middleware
         if (!req.user) {
-            return res.status(401).json({ message: 'Not authenticated' });
+            return res.status(401).json({ message: 'Unauthorized' });
         }
 
         res.json({
             user: {
-                id: req.user._id,
+                id: req.user.id,
                 email: req.user.email,
                 fullname: req.user.fullname,
-                role: req.user.role
+                role: req.user.role,
+                artistId: req.user.artistId
             }
         });
     } catch (err) {
@@ -225,12 +198,8 @@ export async function getCurrentUser(req, res) {
 
 export async function logout(req, res) {
     try {
-        res.clearCookie('token', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none'
-        });
-
+        // Since we're using JWT tokens, logout is handled on the frontend
+        // by removing the token from localStorage
         res.json({
             message: 'Logout successful'
         });

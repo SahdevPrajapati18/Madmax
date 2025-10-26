@@ -2,7 +2,8 @@ import jwt from 'jsonwebtoken';
 import config from '../config/config.js';
 
 export async function authUserMiddleware(req, res, next){
-    const token = req.cookies.token;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
 
     if(!token){
         return res.status(401).json({message: 'Unauthorized - No token provided'});

@@ -5,7 +5,7 @@ export async function authUserMiddleware(req, res, next){
     const token = req.cookies.token;
 
     if(!token){
-        return res.status(401).json({message: 'Unauthorized'});
+        return res.status(401).json({message: 'Unauthorized - No token provided'});
     }
 
     try{
@@ -14,7 +14,10 @@ export async function authUserMiddleware(req, res, next){
         next();
     }
     catch(err){
-        console.log(err);
-        return res.status(401).json({message: 'Unauthorized'});
+        console.error('JWT verification error:', err.message);
+        return res.status(401).json({
+            message: 'Unauthorized - Invalid token',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 }

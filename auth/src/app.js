@@ -13,7 +13,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-    origin: 'https://madmax-nine.vercel.app/',
+    origin: 'https://madmax-nine.vercel.app',
     credentials: true,
 }))
 

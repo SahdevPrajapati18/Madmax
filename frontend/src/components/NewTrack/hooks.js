@@ -54,8 +54,8 @@ export const useTrackForm = (navigate, user, authLoading) => {
       const formDataToSend = createFormData(formData);
 
       const response = await axios.post(`${import.meta.env.VITE_MUSIC_API}/api/music/upload`, formDataToSend, {
-        withCredentials: true,
         headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'multipart/form-data'
         }
       });

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import API from '../../services/api.js';
 
 export const useArtistSongs = (artistId) => {
   const [artistSongs, setArtistSongs] = useState([]);
@@ -16,10 +16,8 @@ export const useArtistSongs = (artistId) => {
       setLoading(true);
       setError(null);
 
-      // Fetch all songs and filter by artistId
-      const response = await axios.get(`${import.meta.env.VITE_MUSIC_API}/api/music/public`, {
-        withCredentials: true
-      });
+      // Fetch all songs and filter by artistId (public endpoint)
+      const response = await API.get('/music/public');
 
       if (response.data && response.data.musics) {
         const filteredSongs = response.data.musics.filter(
@@ -114,11 +112,7 @@ export const useSongManagement = () => {
 
   const handleSaveEdit = async () => {
     try {
-      const response = await axios.put(
-        `${import.meta.env.VITE_MUSIC_API}/api/music/${editingSong._id}`,
-        editForm,
-        { withCredentials: true }
-      );
+      const response = await API.put(`/music/${editingSong._id}`, editForm);
 
       if (response.data.success) {
         setEditingSong(null);
@@ -134,10 +128,7 @@ export const useSongManagement = () => {
 
   const handleDeleteSong = async (songId) => {
     try {
-      const response = await axios.delete(
-        `${import.meta.env.VITE_MUSIC_API}/api/music/${songId}`,
-        { withCredentials: true }
-      );
+      const response = await API.delete(`/music/${songId}`);
 
       if (response.data.success) {
         setShowDeleteConfirm(null);

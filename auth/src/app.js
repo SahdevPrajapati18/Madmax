@@ -9,9 +9,10 @@ import cors from 'cors';
 
 
 dotenv.config();
-app.use(cookieParser());
+
 
 const app = express();
+app.use(cookieParser());
 app.use(cors({
     origin: 'https://madmax-nine.vercel.app',
     credentials: true,

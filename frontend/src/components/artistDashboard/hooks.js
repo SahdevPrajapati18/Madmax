@@ -10,7 +10,7 @@ export const useArtistMusic = () => {
     setLoading(true);
     setError(null);
 
-    axios.get(`${process.env.MUSIC_API}/api/music/artist-musics`, {
+    axios.get(`${process.env.VITE_MUSIC_API}/api/music/artist-musics`, {
       withCredentials: true
     }).then(res => {
       if (res.data && res.data.musics) {
@@ -47,7 +47,7 @@ export const useArtistPlaylists = () => {
     setLoading(true);
     setError(null);
 
-    axios.get(`${process.env.MUSIC_API}/api/music/playlists`, {
+    axios.get(`${process.env.VITE_MUSIC_API}/api/music/playlists`, {
       withCredentials: true
     }).then(res => {
       if (res.data && res.data.playlists) {

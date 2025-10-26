@@ -24,7 +24,12 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if user is already logged in
-    checkAuthStatus();
+    const token = localStorage.getItem('token');
+    if (token) {
+      checkAuthStatus(token);
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -42,10 +47,12 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = async (token) => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_AUTH_API}/api/auth/me`, {
-        withCredentials: true
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
       if (response.data && response.data.user) {
@@ -53,6 +60,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       // User is not authenticated
+      localStorage.removeItem('token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -64,16 +72,14 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post(`${import.meta.env.VITE_AUTH_API}/api/auth/login`, {
         email,
         password
-      }, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
 
-      if (response.data && response.data.user) {
+      if (response.data && response.data.token && response.data.user) {
         console.log('AuthContext login success, user:', response.data.user);
         console.log('User role:', response.data.user.role);
+
+        // Store token in localStorage
+        localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
         return { success: true, user: response.data.user };
       }
@@ -96,14 +102,11 @@ export const AuthProvider = ({ children }) => {
           lastName
         },
         role
-      }, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
 
-      if (response.data && response.data.user) {
+      if (response.data && response.data.token && response.data.user) {
+        // Store token in localStorage
+        localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
         return { success: true, user: response.data.user };
       }
@@ -117,18 +120,17 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post(`${import.meta.env.VITE_AUTH_API}/api/auth/logout`, {}, {
-        withCredentials: true
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
+      // Clear token from localStorage (no backend call needed for JWT logout)
+      localStorage.removeItem('token');
       setUser(null);
+
       // Reset music state on logout
       setCurrentSong(null);
       setCurrentPlaylist([]);
       setCurrentSongIndex(-1);
       setIsPlaying(false);
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 

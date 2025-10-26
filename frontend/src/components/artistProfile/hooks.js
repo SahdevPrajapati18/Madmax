@@ -17,7 +17,7 @@ export const useArtistSongs = (artistId) => {
       setError(null);
 
       // Fetch all songs and filter by artistId
-      const response = await axios.get('${process.env.MUSIC_API}/api/music/public', {
+      const response = await axios.get(`${process.env.MUSIC_API}/api/music/public`, {
         withCredentials: true
       });
 

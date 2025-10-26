@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_API_KEY); // Must use ANON key for RLS
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_API_KEY); // Use SERVICE_ROLE for server
 
 // ----------------- Upload File -----------------
 export async function uploadFile(file) {

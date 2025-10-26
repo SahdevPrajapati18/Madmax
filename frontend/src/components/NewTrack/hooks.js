@@ -53,7 +53,7 @@ export const useTrackForm = (navigate, user, authLoading) => {
     try {
       const formDataToSend = createFormData(formData);
 
-      const response = await axios.post('${process.env.MUSIC_API}/api/music/upload', formDataToSend, {
+      const response = await axios.post(`${process.env.MUSIC_API}/api/music/upload`, formDataToSend, {
         withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data'

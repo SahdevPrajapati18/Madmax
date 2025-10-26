@@ -1,11 +1,12 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Load environment variables from .env file
-const envPath = path.resolve(process.cwd(), '.env')
+const envPath = path.resolve(__dirname, '../.env')
 let envVars = {}
 
 if (fs.existsSync(envPath)) {
@@ -22,10 +23,4 @@ if (fs.existsSync(envPath)) {
     }, {})
 }
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  define: {
-    'process.env': envVars
-  }
-})
+export default envVars

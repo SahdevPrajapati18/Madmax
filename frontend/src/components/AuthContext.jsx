@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/auth/me', {
+      const response = await axios.get('${process.env.AUTH_API}/api/auth/me', {
         withCredentials: true
       });
 
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/login', {
+      const response = await axios.post('${process.env.AUTH_API}/api/auth/login', {
         email,
         password
       }, {
@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (email, password, firstName, lastName, role = 'user') => {
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/register', {
+      const response = await axios.post('${process.env.AUTH_API}/api/auth/register', {
         email,
         password,
         fullname: {
@@ -117,7 +117,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post('http://localhost:3000/api/auth/logout', {}, {
+      await axios.post('${process.env.AUTH_API}/api/auth/logout', {}, {
         withCredentials: true
       });
     } catch (error) {

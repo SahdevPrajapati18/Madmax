@@ -17,7 +17,7 @@ export const useArtistSongs = (artistId) => {
       setError(null);
 
       // Fetch all songs and filter by artistId
-      const response = await axios.get('http://localhost:3002/api/music/public', {
+      const response = await axios.get('${process.env.MUSIC_API}/api/music/public', {
         withCredentials: true
       });
 
@@ -115,7 +115,7 @@ export const useSongManagement = () => {
   const handleSaveEdit = async () => {
     try {
       const response = await axios.put(
-        `http://localhost:3002/api/music/${editingSong._id}`,
+        `${process.env.MUSIC_API}/api/music/${editingSong._id}`,
         editForm,
         { withCredentials: true }
       );
@@ -135,7 +135,7 @@ export const useSongManagement = () => {
   const handleDeleteSong = async (songId) => {
     try {
       const response = await axios.delete(
-        `http://localhost:3002/api/music/${songId}`,
+        `${process.env.MUSIC_API}/api/music/${songId}`,
         { withCredentials: true }
       );
 

@@ -10,7 +10,7 @@ export const useArtistMusic = () => {
     setLoading(true);
     setError(null);
 
-    axios.get("http://localhost:3002/api/music/artist-musics", {
+    axios.get(`${process.env.AUTH_API}/api/music/artist-musics`, {
       withCredentials: true
     }).then(res => {
       if (res.data && res.data.musics) {
@@ -47,7 +47,7 @@ export const useArtistPlaylists = () => {
     setLoading(true);
     setError(null);
 
-    axios.get("http://localhost:3002/api/music/playlists", {
+    axios.get(`${MUSIC_API}/api/music/playlists`, {
       withCredentials: true
     }).then(res => {
       if (res.data && res.data.playlists) {

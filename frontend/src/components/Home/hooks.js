@@ -13,8 +13,8 @@ export const useHomeData = (isAuthenticated) => {
   const fetchSongs = async () => {
     try {
       setLoading(true);
-      console.log('Fetching songs from:', 'http://localhost:3002/api/music/public');
-      const response = await axios.get('http://localhost:3002/api/music/public', {
+      console.log('Fetching songs from:', '${process.env.MUSIC_API}/api/music/public');
+      const response = await axios.get('${process.env.MUSIC_API}/api/music/public', {
         params: { skip: 0, limit: 50 }
       });
 

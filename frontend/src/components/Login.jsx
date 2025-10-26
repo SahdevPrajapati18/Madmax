@@ -64,7 +64,7 @@ export default function Login() {
             type="button"
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-600 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 hover:border-gray-500 transition-all duration-200 touch-target mb-6"
             onClick={() => {
-              window.location.href = 'http://localhost:3000/api/auth/google'
+              window.location.href = '${process.env.AUTH_API}/api/auth/google'
             }}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">

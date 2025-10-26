@@ -10,42 +10,58 @@ import authRoutes from "./routes/auth.routes.js";
 
 dotenv.config();
 
-// ✅ Initialize app first
+// ✅ Initialize Express app
 const app = express();
 
-// ✅ Basic middlewares
+// ✅ CORS setup
 app.use(
   cors({
-    origin: ["https://madmax-production.up.railway.app", "https://madmax-nine.vercel.app"],
+    origin: [
+      "https://madmax-production.up.railway.app",
+      "https://madmax-nine.vercel.app",
+      "http://localhost:5173", // optional for local dev
+    ],
     credentials: true,
   })
 );
+
+// ✅ Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-// ✅ Passport setup AFTER dotenv loads
+// ✅ Passport Google OAuth strategy
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.CLIENT_ID,
       clientSecret: process.env.CLIENT_SECRET,
-      callbackURL: `${process.env.GOOGLE_CALLBACK_URL}/api/auth/google/callback`,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL, // already complete URL
     },
-    (accessToken, refreshToken, profile, done) => {
-      return done(null, profile);
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        // You can handle user creation or lookup here
+        // For now, returning profile directly
+        return done(null, profile);
+      } catch (err) {
+        return done(err, null);
+      }
     }
   )
 );
 app.use(passport.initialize());
 
-// ✅ Routes
+// ✅ Auth routes
 app.use("/api/auth", authRoutes);
 
-// ✅ Health check route for ECS/ALB
-app.get("/health", (req, res) => {
-  res.status(200).send("OK");
+// ✅ Health check (for Railway / ECS)
+app.get("/health", (req, res) => res.status(200).send("OK"));
+
+// ✅ Error handling for OAuth
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ message: "Server Error", error: err.message });
 });
 
 export default app;

@@ -3,587 +3,757 @@ import musicModel from '../models/music.model.js';
 import playlistModel from '../models/playlist.model.js';
 import mongoose from 'mongoose';
 
+// ==================== HELPER FUNCTIONS ====================
 
-export async function uploadMusic(req, res){
-    const musciFile = req.files['music'][0];
+// Validate MongoDB ObjectId
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+// Generate presigned URLs with fallback
+async function getUrlsWithFallback(music) {
+  try {
+    music.musicUrl = await getPresignedUrl(music.musicKey);
+    music.coverImageUrl = await getPresignedUrl(music.coverImageKey);
+  } catch (error) {
+    console.error(`Failed to generate URLs for music ${music._id}:`, error);
+    music.musicUrl = `https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3`;
+    music.coverImageUrl = `https://picsum.photos/400/400?random=${music._id}`;
+  }
+  return music;
+}
+
+// Validate authentication middleware helper
+function validateAuth(req, res) {
+  if (!req.user || !req.user.id) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return false;
+  }
+  return true;
+}
+
+// ==================== MUSIC ENDPOINTS ====================
+
+// ------------------------ Upload Music ------------------------
+export async function uploadMusic(req, res) {
+  try {
+    // Validate authentication
+    if (!validateAuth(req, res)) return;
+
+    // Validate file uploads
+    if (!req.files || !req.files['music'] || !req.files['coverImage']) {
+      return res.status(400).json({ 
+        message: 'Missing required files. Both music and cover image are required.' 
+      });
+    }
+
+    const musicFile = req.files['music'][0];
     const coverImageFile = req.files['coverImage'][0];
 
-    try{
-        const musicKey = await uploadFile(musciFile);
-        const coverImageKey = await uploadFile(coverImageFile);
-
-        const music = await musicModel.create({
-            title: req.body.title,
-            artist: `${req.user.fullname.firstName + ' ' + req.user.fullname.lastName}`,
-            artistId: req.user.id,
-            musicKey,
-            coverImageKey,
-        })
-
-        return res.status(201).json({message: 'Music uploaded successfully', music});
-    }catch(err){
-        console.error(err);
-        return res.status(500).json({message: 'Internal server error', error: err.message});
+    // Validate required fields
+    if (!req.body.title || !req.body.title.trim()) {
+      return res.status(400).json({ message: 'Title is required' });
     }
+
+    // Upload files
+    const musicKey = await uploadFile(musicFile);
+    const coverImageKey = await uploadFile(coverImageFile);
+
+    // Create music record
+    const music = await musicModel.create({
+      title: req.body.title.trim(),
+      artist: `${req.user.fullname.firstName} ${req.user.fullname.lastName}`,
+      artistId: req.user.id,
+      musicKey,
+      coverImageKey,
+    });
+
+    return res.status(201).json({ 
+      message: 'Music uploaded successfully', 
+      music 
+    });
+  } catch (err) {
+    console.error('Upload music error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to upload music', 
+      error: err.message 
+    });
+  }
 }
 
-export async function getArtistMusic(req, res){
-    try{
-        let musics = await musicModel.find({artistId: req.user.id}).lean();
+// ------------------------ Get Artist Music ------------------------
+export async function getArtistMusic(req, res) {
+  try {
+    // Validate authentication
+    if (!validateAuth(req, res)) return;
 
-        // If no songs for this artist, show all songs (for demo purposes)
-        if (musics.length === 0) {
-            console.log('No songs found for this artist, showing all songs...');
-            musics = await musicModel.find().lean();
+    let musics = await musicModel.find({ artistId: req.user.id }).lean();
 
-            // If still no songs, add sample songs
-            if (musics.length === 0) {
-                const sampleSongs = [
-                    {
-                        title: "Midnight Dreams",
-                        artist: "Alex Rivera",
-                        artistId: req.user.id,
-                        musicKey: "sample-midnight-dreams",
-                        coverImageKey: "sample-midnight-cover"
-                    },
-                    {
-                        title: "Electric Nights",
-                        artist: "Sarah Chen",
-                        artistId: req.user.id,
-                        musicKey: "sample-electric-nights",
-                        coverImageKey: "sample-electric-cover"
-                    }
-                ];
-
-                await musicModel.insertMany(sampleSongs);
-                musics = await musicModel.find({artistId: req.user.id}).lean();
-                console.log(`Added ${sampleSongs.length} sample songs for artist`);
-            }
-        }
-
-        for(let music of musics){
-            try {
-                music.musicUrl = await getPresignedUrl(music.musicKey);
-                music.coverImageUrl = await getPresignedUrl(music.coverImageKey);
-            } catch (error) {
-                // Fallback URLs for sample songs or when storage fails
-                music.musicUrl = `https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3`;
-                music.coverImageUrl = `https://picsum.photos/400/400?random=${music._id}`;
-            }
-        }
-
-        return res.status(200).json({musics});
-    }catch(err){
-        console.error(err);
-        return res.status(500).json({message: 'Internal server error', error: err.message});
+    // If no songs for this artist, show all songs (for demo)
+    if (musics.length === 0) {
+      musics = await musicModel.find().lean();
+      
+      // Create sample data only if database is completely empty
+      if (musics.length === 0) {
+        const sampleSongs = [
+          { 
+            title: "Midnight Dreams", 
+            artist: "Alex Rivera", 
+            artistId: new mongoose.Types.ObjectId(), 
+            musicKey: "sample-midnight-dreams", 
+            coverImageKey: "sample-midnight-cover" 
+          },
+          { 
+            title: "Electric Nights", 
+            artist: "Sarah Chen", 
+            artistId: new mongoose.Types.ObjectId(), 
+            musicKey: "sample-electric-nights", 
+            coverImageKey: "sample-electric-cover" 
+          }
+        ];
+        await musicModel.insertMany(sampleSongs);
+        musics = await musicModel.find().lean();
+      }
     }
+
+    // Generate URLs in parallel
+    await Promise.all(musics.map(music => getUrlsWithFallback(music)));
+
+    return res.status(200).json({ musics });
+  } catch (err) {
+    console.error('Get artist music error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to retrieve music', 
+      error: err.message 
+    });
+  }
 }
 
-export async function createPlaylist(req, res){
+// ------------------------ Get All Musics ------------------------
+export async function getAllMusics(req, res) {
+  try {
+    // Parse and validate pagination
+    const skip = Math.max(0, parseInt(req.query.skip) || 0);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
+
+    let musics = await musicModel.find().skip(skip).limit(limit).lean();
+
+    // Create sample data only if database is empty and not paginated
+    if (musics.length === 0 && skip === 0) {
+      const sampleSongs = [
+        { 
+          title: "Midnight Dreams", 
+          artist: "Alex Rivera", 
+          artistId: new mongoose.Types.ObjectId(), 
+          musicKey: "sample-midnight-dreams", 
+          coverImageKey: "sample-midnight-cover" 
+        },
+        { 
+          title: "Electric Nights", 
+          artist: "Sarah Chen", 
+          artistId: new mongoose.Types.ObjectId(), 
+          musicKey: "sample-electric-nights", 
+          coverImageKey: "sample-electric-cover" 
+        },
+        { 
+          title: "Neon Lights", 
+          artist: "Marcus Johnson", 
+          artistId: new mongoose.Types.ObjectId(), 
+          musicKey: "sample-neon-lights", 
+          coverImageKey: "sample-neon-cover" 
+        },
+        { 
+          title: "Ocean Waves", 
+          artist: "Luna Martinez", 
+          artistId: new mongoose.Types.ObjectId(), 
+          musicKey: "sample-ocean-waves", 
+          coverImageKey: "sample-ocean-cover" 
+        },
+        { 
+          title: "City Lights", 
+          artist: "David Kim", 
+          artistId: new mongoose.Types.ObjectId(), 
+          musicKey: "sample-city-lights", 
+          coverImageKey: "sample-city-cover" 
+        }
+      ];
+      await musicModel.insertMany(sampleSongs);
+      musics = await musicModel.find().skip(skip).limit(limit).lean();
+    }
+
+    // Generate URLs in parallel
+    await Promise.all(musics.map(music => getUrlsWithFallback(music)));
+
+    return res.status(200).json({ 
+      musics,
+      pagination: { skip, limit, count: musics.length }
+    });
+  } catch (err) {
+    console.error('Get all musics error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to retrieve music', 
+      error: err.message 
+    });
+  }
+}
+
+// ------------------------ Get Music Details ------------------------
+export async function getMusicDetails(req, res) {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid music ID format' });
+    }
+
+    const music = await musicModel.findById(id).lean();
+    
+    if (!music) {
+      return res.status(404).json({ message: 'Music not found' });
+    }
+
+    await getUrlsWithFallback(music);
+
+    return res.status(200).json({ music });
+  } catch (err) {
+    console.error('Get music details error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to retrieve music details', 
+      error: err.message 
+    });
+  }
+}
+
+// ==================== PLAYLIST ENDPOINTS ====================
+
+// ------------------------ Create Playlist ------------------------
+export async function createPlaylist(req, res) {
+  try {
+    // Validate authentication
+    if (!validateAuth(req, res)) return;
+
     const { title, description, musics, isPublic, tags } = req.body || {};
 
-    if (!title || !musics || musics.length === 0) {
-        return res.status(400).json({ message: 'Missing title or musics in request body' });
+    // Validate required fields
+    if (!title || !title.trim()) {
+      return res.status(400).json({ message: 'Title is required' });
     }
 
-    try {
-        // Calculate total duration and track count
-        let totalDuration = 0;
-        let trackCount = musics.length;
-        let coverImageUrl = null;
-
-        // Get the first music to use as cover image
-        if (musics.length > 0) {
-            const firstMusic = await musicModel.findById(musics[0]);
-            if (firstMusic) {
-                try {
-                    coverImageUrl = await getPresignedUrl(firstMusic.coverImageKey);
-                } catch (error) {
-                    // Fallback URL if storage fails
-                    coverImageUrl = `https://picsum.photos/400/400?random=${firstMusic._id}`;
-                }
-            }
-        }
-
-        for (const musicId of musics) {
-            const music = await musicModel.findById(musicId);
-            if (music && music.duration) {
-                totalDuration += music.duration;
-            }
-        }
-
-        const playlist = await playlistModel.create({
-            title,
-            description: description || '',
-            artist: req.user.fullname.firstName + ' ' + req.user.fullname.lastName,
-            artistId: req.user.id,
-            userId: req.user.id, // For now, user and artist are the same
-            musics,
-            isPublic: isPublic || false,
-            coverImageUrl,
-            tags: tags || [],
-            duration: totalDuration,
-            trackCount
-        });
-
-        return res.status(201).json({
-            message: 'Playlist created successfully',
-            playlist: {
-                id: playlist._id,
-                title: playlist.title,
-                description: playlist.description,
-                trackCount: playlist.trackCount,
-                duration: playlist.duration,
-                coverImageUrl: playlist.coverImageUrl,
-                createdAt: playlist.createdAt
-            }
-        });
-    } catch (err) {
-        console.error('Error creating playlist:', err);
-        return res.status(500).json({ message: 'Internal server error', error: err.message });
+    if (!musics || !Array.isArray(musics) || musics.length === 0) {
+      return res.status(400).json({ 
+        message: 'At least one music track is required' 
+      });
     }
+
+    // Validate all music IDs
+    const invalidIds = musics.filter(id => !isValidObjectId(id));
+    if (invalidIds.length > 0) {
+      return res.status(400).json({ 
+        message: 'Invalid music IDs provided',
+        invalidIds 
+      });
+    }
+
+    // Fetch all music tracks in one query (avoid N+1 problem)
+    const musicTracks = await musicModel.find({ _id: { $in: musics } }).lean();
+
+    if (musicTracks.length !== musics.length) {
+      return res.status(400).json({ 
+        message: 'Some music tracks not found',
+        found: musicTracks.length,
+        requested: musics.length
+      });
+    }
+
+    // Calculate total duration
+    const totalDuration = musicTracks.reduce((sum, music) => {
+      return sum + (music.duration || 0);
+    }, 0);
+
+    // Get cover image from first song
+    let coverImageUrl = null;
+    if (musicTracks.length > 0) {
+      const firstMusic = musicTracks[0];
+      try {
+        coverImageUrl = await getPresignedUrl(firstMusic.coverImageKey);
+      } catch {
+        coverImageUrl = `https://picsum.photos/400/400?random=${firstMusic._id}`;
+      }
+    }
+
+    // Create playlist
+    const playlist = await playlistModel.create({
+      title: title.trim(),
+      description: description ? description.trim() : '',
+      artist: `${req.user.fullname.firstName} ${req.user.fullname.lastName}`,
+      artistId: req.user.id,
+      userId: req.user.id,
+      musics,
+      isPublic: Boolean(isPublic),
+      coverImageUrl,
+      tags: Array.isArray(tags) ? tags : [],
+      duration: totalDuration,
+      trackCount: musics.length
+    });
+
+    return res.status(201).json({
+      message: 'Playlist created successfully',
+      playlist: {
+        id: playlist._id,
+        title: playlist.title,
+        description: playlist.description,
+        trackCount: playlist.trackCount,
+        duration: playlist.duration,
+        coverImageUrl: playlist.coverImageUrl,
+        createdAt: playlist.createdAt
+      }
+    });
+  } catch (err) {
+    console.error('Create playlist error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to create playlist', 
+      error: err.message 
+    });
+  }
 }
 
-export async function getPlaylists(req, res){
-    try{
-        const playlists = await playlistModel.find({userId: req.user.id})
-            .sort({ createdAt: -1 })
-            .lean();
+// ------------------------ Get User's Playlists ------------------------
+export async function getPlaylists(req, res) {
+  try {
+    // Validate authentication
+    if (!validateAuth(req, res)) return;
 
-        // Enhance playlists with music details
-        for (let playlist of playlists) {
-            playlist.id = playlist._id;
-            playlist.musics = await Promise.all(
-                playlist.musics.map(async (musicId) => {
-                    try {
-                        const music = await musicModel.findById(musicId).lean();
-                        if (music) {
-                            music.musicUrl = await getPresignedUrl(music.musicKey);
-                            music.coverImageUrl = await getPresignedUrl(music.coverImageKey);
-                            return music;
-                        }
-                        return null;
-                    } catch (error) {
-                        return null;
-                    }
-                })
-            );
-            playlist.musics = playlist.musics.filter(music => music !== null);
-        }
+    const playlists = await playlistModel
+      .find({ userId: req.user.id })
+      .sort({ createdAt: -1 })
+      .lean();
 
-        return res.status(200).json({playlists});
-    }catch(err){
-        console.error('Error fetching playlists:', err);
-        return res.status(500).json({message: 'Internal server error', error: err.message});
+    // Get all unique music IDs from all playlists
+    const allMusicIds = [...new Set(playlists.flatMap(p => p.musics))];
+
+    // Fetch all music tracks in one query (avoid N+1 problem)
+    const allMusics = await musicModel.find({ _id: { $in: allMusicIds } }).lean();
+    
+    // Generate URLs in parallel
+    await Promise.all(allMusics.map(music => getUrlsWithFallback(music)));
+
+    // Create a map for quick lookup
+    const musicMap = new Map(allMusics.map(m => [m._id.toString(), m]));
+
+    // Populate playlists with music data
+    for (let playlist of playlists) {
+      playlist.id = playlist._id;
+      playlist.musics = playlist.musics
+        .map(musicId => musicMap.get(musicId.toString()))
+        .filter(m => m !== undefined);
     }
+
+    return res.status(200).json({ playlists });
+  } catch (err) {
+    console.error('Get playlists error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to retrieve playlists', 
+      error: err.message 
+    });
+  }
 }
 
-export async function getAllMusics(req, res){
-    const {skip=0, limit=10} = req.query;
-    try{
-        // First try to connect and check database
-        await musicModel.findOne(); // Test database connection
-        let musics = await musicModel.find().skip(skip).limit(limit).lean();
+// ------------------------ Get Public Playlists ------------------------
+export async function getPublicPlaylists(req, res) {
+  try {
+    const playlists = await playlistModel
+      .find({ isPublic: true })
+      .sort({ plays: -1, createdAt: -1 })
+      .limit(20)
+      .lean();
 
-        // If no songs in database, add sample songs
-        if (musics.length === 0) {
-            console.log('No songs found in database, adding sample songs...');
-
-            const sampleSongs = [
-                {
-                    title: "Midnight Dreams",
-                    artist: "Alex Rivera",
-                    artistId: new mongoose.Types.ObjectId(),
-                    musicKey: "sample-midnight-dreams",
-                    coverImageKey: "sample-midnight-cover"
-                },
-                {
-                    title: "Electric Nights",
-                    artist: "Sarah Chen",
-                    artistId: new mongoose.Types.ObjectId(),
-                    musicKey: "sample-electric-nights",
-                    coverImageKey: "sample-electric-cover"
-                },
-                {
-                    title: "Neon Lights",
-                    artist: "Marcus Johnson",
-                    artistId: new mongoose.Types.ObjectId(),
-                    musicKey: "sample-neon-lights",
-                    coverImageKey: "sample-neon-cover"
-                },
-                {
-                    title: "Ocean Waves",
-                    artist: "Luna Martinez",
-                    artistId: new mongoose.Types.ObjectId(),
-                    musicKey: "sample-ocean-waves",
-                    coverImageKey: "sample-ocean-cover"
-                },
-                {
-                    title: "City Lights",
-                    artist: "David Kim",
-                    artistId: new mongoose.Types.ObjectId(),
-                    musicKey: "sample-city-lights",
-                    coverImageKey: "sample-city-cover"
-                }
-            ];
-
-            await musicModel.insertMany(sampleSongs);
-            musics = await musicModel.find().skip(skip).limit(limit).lean();
-            console.log(`Added ${sampleSongs.length} sample songs to database`);
-        }
-
-        for(let music of musics){
-            try {
-                music.musicUrl = await getPresignedUrl(music.musicKey);
-                music.coverImageUrl = await getPresignedUrl(music.coverImageKey);
-            } catch (error) {
-                music.musicUrl = `https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3`;
-                music.coverImageUrl = `https://picsum.photos/400/400?random=${music._id}`;
-            }
-        }
-
-        return res.status(200).json({musics});
-    }catch(err){
-        console.error('Database error:', err);
-        return res.status(500).json({message: 'Database connection error', error: err.message});
+    // Add basic info without fetching all music details (performance optimization)
+    for (let playlist of playlists) {
+      playlist.id = playlist._id;
+      playlist.trackCount = playlist.musics.length;
     }
+
+    return res.status(200).json({ playlists });
+  } catch (err) {
+    console.error('Get public playlists error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to retrieve public playlists', 
+      error: err.message 
+    });
+  }
 }
 
-export async function getMusicDetails(req, res){
-    const {id} = req.params;
-    try{
-        const music = await musicModel.findById(id).lean();
-        if(!music){
-            return res.status(404).json({message: 'Music not found'});
-        }
+// ------------------------ Get Playlist by ID ------------------------
+export async function getPlaylistById(req, res) {
+  try {
+    // Validate authentication
+    if (!validateAuth(req, res)) return;
 
-        // Get presigned URLs for music and cover image
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid playlist ID format' });
+    }
+
+    const playlist = await playlistModel.findOne({
+      _id: id,
+      $or: [{ userId: req.user.id }, { isPublic: true }]
+    }).lean();
+
+    if (!playlist) {
+      return res.status(404).json({ 
+        message: 'Playlist not found or access denied' 
+      });
+    }
+
+    // Fetch all music tracks in one query
+    const musics = await musicModel.find({ _id: { $in: playlist.musics } }).lean();
+    
+    // Generate URLs in parallel
+    await Promise.all(musics.map(music => getUrlsWithFallback(music)));
+
+    // Create ordered list based on playlist order
+    const musicMap = new Map(musics.map(m => [m._id.toString(), m]));
+    playlist.musics = playlist.musics
+      .map(musicId => musicMap.get(musicId.toString()))
+      .filter(m => m !== undefined);
+
+    playlist.id = playlist._id;
+
+    return res.status(200).json({ playlist });
+  } catch (err) {
+    console.error('Get playlist by ID error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to retrieve playlist', 
+      error: err.message 
+    });
+  }
+}
+
+// ------------------------ Add Music to Playlist ------------------------
+export async function addToPlaylist(req, res) {
+  try {
+    // Validate authentication
+    if (!validateAuth(req, res)) return;
+
+    const { id } = req.params;
+    const { musicId } = req.body || {};
+
+    // Validate playlist ID
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid playlist ID format' });
+    }
+
+    // Validate music ID
+    if (!musicId || !isValidObjectId(musicId)) {
+      return res.status(400).json({ message: 'Valid musicId is required' });
+    }
+
+    const playlist = await playlistModel.findOne({ 
+      _id: id, 
+      userId: req.user.id 
+    });
+    
+    if (!playlist) {
+      return res.status(404).json({ 
+        message: 'Playlist not found or access denied' 
+      });
+    }
+
+    // Check if music already exists (FIXED: convert ObjectIds to strings)
+    const musicExists = playlist.musics.some(m => m.toString() === musicId);
+    if (musicExists) {
+      return res.status(400).json({ 
+        message: 'Music already exists in playlist' 
+      });
+    }
+
+    // Verify music track exists
+    const music = await musicModel.findById(musicId);
+    if (!music) {
+      return res.status(404).json({ message: 'Music track not found' });
+    }
+
+    const isFirstSong = playlist.musics.length === 0;
+    let coverImageUrl = playlist.coverImageUrl;
+
+    // Update cover image if first song
+    if (isFirstSong) {
+      try {
+        coverImageUrl = await getPresignedUrl(music.coverImageKey);
+      } catch {
+        coverImageUrl = `https://picsum.photos/400/400?random=${music._id}`;
+      }
+    }
+
+    // Update playlist
+    playlist.musics.push(musicId);
+    playlist.trackCount = playlist.musics.length;
+    playlist.duration = (playlist.duration || 0) + (music.duration || 0);
+    
+    if (isFirstSong) {
+      playlist.coverImageUrl = coverImageUrl;
+    }
+
+    await playlist.save();
+
+    return res.status(200).json({
+      message: 'Music added to playlist successfully',
+      playlist: { 
+        id: playlist._id, 
+        title: playlist.title, 
+        trackCount: playlist.trackCount, 
+        duration: playlist.duration 
+      }
+    });
+  } catch (err) {
+    console.error('Add to playlist error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to add music to playlist', 
+      error: err.message 
+    });
+  }
+}
+
+// ------------------------ Remove Music from Playlist ------------------------
+export async function removeFromPlaylist(req, res) {
+  try {
+    // Validate authentication
+    if (!validateAuth(req, res)) return;
+
+    const { id } = req.params;
+    const { musicId } = req.body || {};
+
+    // Validate playlist ID
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid playlist ID format' });
+    }
+
+    // Validate music ID
+    if (!musicId || !isValidObjectId(musicId)) {
+      return res.status(400).json({ message: 'Valid musicId is required' });
+    }
+
+    const playlist = await playlistModel.findOne({ 
+      _id: id, 
+      userId: req.user.id 
+    });
+    
+    if (!playlist) {
+      return res.status(404).json({ 
+        message: 'Playlist not found or access denied' 
+      });
+    }
+
+    // FIXED: Find index using string comparison for ObjectIds
+    const musicIndex = playlist.musics.findIndex(m => m.toString() === musicId);
+    
+    if (musicIndex === -1) {
+      return res.status(400).json({ 
+        message: 'Music not found in playlist' 
+      });
+    }
+
+    const isFirstSong = musicIndex === 0;
+    let coverImageUrl = playlist.coverImageUrl;
+
+    // Update cover image if removing first song
+    if (isFirstSong && playlist.musics.length > 1) {
+      const newFirstMusic = await musicModel.findById(playlist.musics[1]);
+      if (newFirstMusic) {
         try {
-            music.musicUrl = await getPresignedUrl(music.musicKey);
-            music.coverImageUrl = await getPresignedUrl(music.coverImageKey);
-        } catch (error) {
-            // Fallback URLs if storage fails
-            music.musicUrl = `https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3`;
-            music.coverImageUrl = `https://picsum.photos/400/400?random=${music._id}`;
+          coverImageUrl = await getPresignedUrl(newFirstMusic.coverImageKey);
+        } catch {
+          coverImageUrl = `https://picsum.photos/400/400?random=${newFirstMusic._id}`;
         }
+      }
+    } else if (isFirstSong && playlist.musics.length === 1) {
+      coverImageUrl = null;
+    }
 
-        return res.status(200).json({music});
+    // Get music duration before removing
+    const music = await musicModel.findById(musicId);
+    const musicDuration = music?.duration || 0;
+
+    // Update playlist
+    playlist.musics.splice(musicIndex, 1);
+    playlist.trackCount = playlist.musics.length;
+    playlist.duration = Math.max(0, (playlist.duration || 0) - musicDuration);
+    
+    if (isFirstSong) {
+      playlist.coverImageUrl = coverImageUrl;
     }
-    catch(err){
-        console.error('Error getting music details:', err);
-        return res.status(500).json({message: 'Internal server error', error: err.message});
-    }
+
+    await playlist.save();
+
+    return res.status(200).json({
+      message: 'Music removed from playlist successfully',
+      playlist: { 
+        id: playlist._id, 
+        title: playlist.title, 
+        trackCount: playlist.trackCount, 
+        duration: playlist.duration, 
+        coverImageUrl: playlist.coverImageUrl 
+      }
+    });
+  } catch (err) {
+    console.error('Remove from playlist error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to remove music from playlist', 
+      error: err.message 
+    });
+  }
 }
 
-export async function getPlaylistById(req, res){
-    const {id} = req.params;
+// ------------------------ Update Playlist ------------------------
+export async function updatePlaylist(req, res) {
+  try {
+    // Validate authentication
+    if (!validateAuth(req, res)) return;
 
-    try{
-        const playlist = await playlistModel.findOne({
-            _id: id,
-            $or: [
-                { userId: req.user.id }, // User owns the playlist
-                { isPublic: true } // Or it's a public playlist
-            ]
-        }).lean();
-
-        if(!playlist){
-            return res.status(404).json({message: 'Playlist not found or access denied'});
-        }
-
-        // Enhance playlist with music details
-        const musics = [];
-        for(let musicId of playlist.musics){
-            try {
-                const music = await musicModel.findById(musicId).lean();
-                if(music){
-                    music.musicUrl = await getPresignedUrl(music.musicKey);
-                    music.coverImageUrl = await getPresignedUrl(music.coverImageKey);
-                    musics.push(music);
-                }
-            } catch (error) {
-                console.error('Error getting music details:', error);
-            }
-        }
-
-        playlist.musics = musics;
-        playlist.id = playlist._id;
-
-        return res.status(200).json({playlist});
-    }catch(err){
-        console.error('Error fetching playlist:', err);
-        return res.status(500).json({message: 'Internal server error', error: err.message});
-    }
-}
-
-export async function updatePlaylist(req, res){
-    const {id} = req.params;
+    const { id } = req.params;
     const { title, description, musics, isPublic, tags } = req.body || {};
 
-    try{
-        // Check if playlist exists and user owns it
-        const existingPlaylist = await playlistModel.findOne({
-            _id: id,
-            userId: req.user.id
-        });
-
-        if(!existingPlaylist){
-            return res.status(404).json({message: 'Playlist not found or access denied'});
-        }
-
-        // Calculate new duration and track count if musics are being updated
-        let totalDuration = existingPlaylist.duration;
-        let trackCount = existingPlaylist.trackCount;
-        let coverImageUrl = existingPlaylist.coverImageUrl;
-
-        if (musics && musics.length > 0) {
-            totalDuration = 0;
-            trackCount = musics.length;
-
-            // Update cover image if first song changed
-            if (musics.length > 0 && musics[0] !== existingPlaylist.musics[0]) {
-                const firstMusic = await musicModel.findById(musics[0]);
-                if (firstMusic) {
-                    try {
-                        coverImageUrl = await getPresignedUrl(firstMusic.coverImageKey);
-                    } catch (error) {
-                        // Fallback URL if storage fails
-                        coverImageUrl = `https://picsum.photos/400/400?random=${firstMusic._id}`;
-                    }
-                }
-            }
-
-            for (const musicId of musics) {
-                const music = await musicModel.findById(musicId);
-                if (music && music.duration) {
-                    totalDuration += music.duration;
-                }
-            }
-        }
-
-        // Update playlist
-        const updatedPlaylist = await playlistModel.findByIdAndUpdate(
-            id,
-            {
-                ...(title && { title }),
-                ...(description !== undefined && { description }),
-                ...(musics && { musics }),
-                ...(isPublic !== undefined && { isPublic }),
-                ...(tags && { tags }),
-                ...(coverImageUrl !== existingPlaylist.coverImageUrl && { coverImageUrl }),
-                duration: totalDuration,
-                trackCount
-            },
-            { new: true, runValidators: true }
-        );
-
-        return res.status(200).json({
-            message: 'Playlist updated successfully',
-            playlist: {
-                id: updatedPlaylist._id,
-                title: updatedPlaylist.title,
-                description: updatedPlaylist.description,
-                trackCount: updatedPlaylist.trackCount,
-                duration: updatedPlaylist.duration,
-                coverImageUrl: updatedPlaylist.coverImageUrl
-            }
-        });
-    } catch (err) {
-        console.error('Error updating playlist:', err);
-        return res.status(500).json({ message: 'Internal server error', error: err.message });
+    // Validate playlist ID
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid playlist ID format' });
     }
+
+    // Check if playlist exists and user owns it
+    const existingPlaylist = await playlistModel.findOne({
+      _id: id,
+      userId: req.user.id
+    });
+
+    if (!existingPlaylist) {
+      return res.status(404).json({ 
+        message: 'Playlist not found or access denied' 
+      });
+    }
+
+    let totalDuration = existingPlaylist.duration;
+    let trackCount = existingPlaylist.trackCount;
+    let coverImageUrl = existingPlaylist.coverImageUrl;
+
+    // If musics are being updated
+    if (musics && Array.isArray(musics)) {
+      if (musics.length === 0) {
+        return res.status(400).json({ 
+          message: 'Playlist must contain at least one track' 
+        });
+      }
+
+      // Validate all music IDs
+      const invalidIds = musics.filter(musicId => !isValidObjectId(musicId));
+      if (invalidIds.length > 0) {
+        return res.status(400).json({ 
+          message: 'Invalid music IDs provided',
+          invalidIds 
+        });
+      }
+
+      // Fetch all music tracks in one query
+      const musicTracks = await musicModel.find({ _id: { $in: musics } }).lean();
+
+      if (musicTracks.length !== musics.length) {
+        return res.status(400).json({ 
+          message: 'Some music tracks not found',
+          found: musicTracks.length,
+          requested: musics.length
+        });
+      }
+
+      // Calculate new duration
+      totalDuration = musicTracks.reduce((sum, music) => {
+        return sum + (music.duration || 0);
+      }, 0);
+      trackCount = musics.length;
+
+      // FIXED: Update cover image if first song changed (compare as strings)
+      const firstMusicChanged = musics[0] !== existingPlaylist.musics[0]?.toString();
+      if (firstMusicChanged) {
+        const firstMusic = musicTracks.find(m => m._id.toString() === musics[0]);
+        if (firstMusic) {
+          try {
+            coverImageUrl = await getPresignedUrl(firstMusic.coverImageKey);
+          } catch {
+            coverImageUrl = `https://picsum.photos/400/400?random=${firstMusic._id}`;
+          }
+        }
+      }
+    }
+
+    // Build update object
+    const updateData = {
+      ...(title && { title: title.trim() }),
+      ...(description !== undefined && { description: description.trim() }),
+      ...(musics && { musics }),
+      ...(isPublic !== undefined && { isPublic: Boolean(isPublic) }),
+      ...(tags && Array.isArray(tags) && { tags }),
+      duration: totalDuration,
+      trackCount,
+      coverImageUrl
+    };
+
+    const updatedPlaylist = await playlistModel.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    return res.status(200).json({
+      message: 'Playlist updated successfully',
+      playlist: {
+        id: updatedPlaylist._id,
+        title: updatedPlaylist.title,
+        description: updatedPlaylist.description,
+        trackCount: updatedPlaylist.trackCount,
+        duration: updatedPlaylist.duration,
+        coverImageUrl: updatedPlaylist.coverImageUrl
+      }
+    });
+  } catch (err) {
+    console.error('Update playlist error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to update playlist', 
+      error: err.message 
+    });
+  }
 }
 
-export async function deletePlaylist(req, res){
-    const {id} = req.params;
+// ------------------------ Delete Playlist ------------------------
+export async function deletePlaylist(req, res) {
+  try {
+    // Validate authentication
+    if (!validateAuth(req, res)) return;
 
-    try{
-        // Check if playlist exists and user owns it
-        const playlist = await playlistModel.findOne({
-            _id: id,
-            userId: req.user.id
-        });
+    const { id } = req.params;
 
-        if(!playlist){
-            return res.status(404).json({message: 'Playlist not found or access denied'});
-        }
-
-        await playlistModel.findByIdAndDelete(id);
-
-        return res.status(200).json({ message: 'Playlist deleted successfully' });
-    } catch (err) {
-        console.error('Error deleting playlist:', err);
-        return res.status(500).json({ message: 'Internal server error', error: err.message });
-    }
-}
-
-export async function addToPlaylist(req, res){
-    const {id} = req.params;
-    const { musicId } = req.body || {};
-
-    if (!musicId) {
-        return res.status(400).json({ message: 'Missing musicId in request body' });
+    // Validate playlist ID
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid playlist ID format' });
     }
 
-    try{
-        // Check if playlist exists and user owns it
-        const playlist = await playlistModel.findOne({
-            _id: id,
-            userId: req.user.id
-        });
+    // Check if playlist exists and user owns it
+    const playlist = await playlistModel.findOneAndDelete({
+      _id: id,
+      userId: req.user.id
+    });
 
-        if(!playlist){
-            return res.status(404).json({message: 'Playlist not found or access denied'});
-        }
-
-        // Check if music already exists in playlist
-        if (playlist.musics.includes(musicId)) {
-            return res.status(400).json({ message: 'Music already exists in playlist' });
-        }
-
-        // Check if this is the first song (playlist was empty)
-        const isFirstSong = playlist.musics.length === 0;
-        let coverImageUrl = playlist.coverImageUrl;
-
-        // If playlist was empty, set cover image from the new first song
-        if (isFirstSong) {
-            const music = await musicModel.findById(musicId);
-            if (music) {
-                try {
-                    coverImageUrl = await getPresignedUrl(music.coverImageKey);
-                } catch (error) {
-                    // Fallback URL if storage fails
-                    coverImageUrl = `https://picsum.photos/400/400?random=${music._id}`;
-                }
-            }
-        }
-
-        // Add music to playlist
-        playlist.musics.push(musicId);
-        playlist.trackCount = playlist.musics.length;
-
-        // Update duration
-        const music = await musicModel.findById(musicId);
-        if (music && music.duration) {
-            playlist.duration += music.duration;
-        }
-
-        // Update cover image if it was the first song
-        if (isFirstSong) {
-            playlist.coverImageUrl = coverImageUrl;
-        }
-
-        await playlist.save();
-
-        return res.status(200).json({
-            message: 'Music added to playlist successfully',
-            playlist: {
-                id: playlist._id,
-                title: playlist.title,
-                trackCount: playlist.trackCount,
-                duration: playlist.duration
-            }
-        });
-    } catch (err) {
-        console.error('Error adding to playlist:', err);
-        return res.status(500).json({ message: 'Internal server error', error: err.message });
-    }
-}
-
-export async function removeFromPlaylist(req, res){
-    const {id} = req.params;
-    const { musicId } = req.body || {};
-
-    if (!musicId) {
-        return res.status(400).json({ message: 'Missing musicId in request body' });
+    if (!playlist) {
+      return res.status(404).json({ 
+        message: 'Playlist not found or access denied' 
+      });
     }
 
-    try{
-        // Check if playlist exists and user owns it
-        const playlist = await playlistModel.findOne({
-            _id: id,
-            userId: req.user.id
-        });
-
-        if(!playlist){
-            return res.status(404).json({message: 'Playlist not found or access denied'});
-        }
-
-        // Check if music exists in playlist
-        const musicIndex = playlist.musics.indexOf(musicId);
-        if (musicIndex === -1) {
-            return res.status(400).json({ message: 'Music not found in playlist' });
-        }
-
-        // Check if this is the first song being removed
-        const isFirstSong = musicIndex === 0;
-        let coverImageUrl = playlist.coverImageUrl;
-
-        // If removing the first song, update cover image from new first song
-        if (isFirstSong && playlist.musics.length > 1) {
-            const newFirstMusic = await musicModel.findById(playlist.musics[1]);
-            if (newFirstMusic) {
-                try {
-                    coverImageUrl = await getPresignedUrl(newFirstMusic.coverImageKey);
-                } catch (error) {
-                    // Fallback URL if storage fails
-                    coverImageUrl = `https://picsum.photos/400/400?random=${newFirstMusic._id}`;
-                }
-            }
-        } else if (isFirstSong && playlist.musics.length === 1) {
-            // If removing the only song, set cover to null
-            coverImageUrl = null;
-        }
-
-        // Remove music from playlist
-        playlist.musics.splice(musicIndex, 1);
-        playlist.trackCount = playlist.musics.length;
-
-        // Update duration
-        const music = await musicModel.findById(musicId);
-        if (music && music.duration) {
-            playlist.duration -= music.duration;
-        }
-
-        // Update cover image if the first song was removed
-        if (isFirstSong) {
-            playlist.coverImageUrl = coverImageUrl;
-        }
-
-        await playlist.save();
-
-        return res.status(200).json({
-            message: 'Music removed from playlist successfully',
-            playlist: {
-                id: playlist._id,
-                title: playlist.title,
-                trackCount: playlist.trackCount,
-                duration: playlist.duration,
-                coverImageUrl: playlist.coverImageUrl
-            }
-        });
-    } catch (err) {
-        console.error('Error removing from playlist:', err);
-        return res.status(500).json({ message: 'Internal server error', error: err.message });
-    }
-}
-
-export async function getPublicPlaylists(req, res){
-    try{
-        const playlists = await playlistModel.find({ isPublic: true })
-            .sort({ plays: -1, createdAt: -1 })
-            .limit(20)
-            .lean();
-
-        // Enhance playlists with basic info (without full music details for performance)
-        for (let playlist of playlists) {
-            playlist.id = playlist._id;
-            playlist.trackCount = playlist.musics.length;
-        }
-
-        return res.status(200).json({playlists});
-    }catch(err){
-        console.error('Error fetching public playlists:', err);
-        return res.status(500).json({message: 'Internal server error', error: err.message});
-    }
+    return res.status(200).json({ 
+      message: 'Playlist deleted successfully' 
+    });
+  } catch (err) {
+    console.error('Delete playlist error:', err);
+    return res.status(500).json({ 
+      message: 'Failed to delete playlist', 
+      error: err.message 
+    });
+  }
 }

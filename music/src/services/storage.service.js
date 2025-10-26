@@ -1,41 +1,45 @@
-import {S3Client, PutObjectCommand, GetObjectCommand} from '@aws-sdk/client-s3';
-import config from '../config/config.js';
-import {v4 as uuidv4} from 'uuid';
-import {getSignedUrl} from '@aws-sdk/s3-request-presigner';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+dotenv.config();
 
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_API_KEY); // Must use ANON key for RLS
 
+// ----------------- Upload File -----------------
+export async function uploadFile(file) {
+  if (!file) throw new Error('No file provided');
 
-const s3 = new S3Client({
-    region: config.AWS_REGION,
-    credentials: {
-        accessKeyId: config.AWS_ACCESS_KEY_ID,
-        secretAccessKey: config.AWS_SECRET_ACCESS_KEY
-    }
-})
+  const fileExt = file.originalname.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+  const bucket = 'music-files';
 
-export async function useCallback(file){
-    const key = `${uuidv4()}-${file.originalname}`;
-    
-    const command = new PutObjectCommand({
-        Bucket: 'madmax',
-        Body: file.buffer,
-        Key: key,
-        
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(fileName, file.buffer, {
+      contentType: file.mimetype,
+      upsert: false
     });
-        const response = await s3.send(command);
 
-    return key
+  if (error) {
+    console.error('Supabase upload error:', error);
+    throw new Error(error.message);
+  }
+
+  return data.path; // Save this as musicKey / coverImageKey in MongoDB
 }
-export { useCallback as uploadFile };
 
+// ----------------- Get Presigned URL -----------------
+export async function getPresignedUrl(filePath) {
+  if (!filePath) throw new Error('No file path provided');
 
-export async function getPresignedUrl(key){
-    const command = new GetObjectCommand({
-        Bucket: 'madmax',
-        Key: key
-    });
+  const bucket = 'music-files';
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(filePath, 60 * 60); // 1 hour expiry
 
-    const url = await getSignedUrl(s3, command, {expiresIn: 3600});
+  if (error) {
+    console.error('Supabase signed URL error:', error);
+    throw new Error(error.message);
+  }
 
-    return url;
+  return data.signedUrl;
 }

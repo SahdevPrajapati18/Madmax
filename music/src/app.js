@@ -6,7 +6,7 @@ import cors from 'cors';
 const app = express();
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: ['https://madmax-nine.vercel.app/'],
     credentials: true
 }));
 

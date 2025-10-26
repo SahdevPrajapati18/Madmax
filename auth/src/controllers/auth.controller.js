@@ -28,8 +28,8 @@ export async function login(req, res) {
 
         res.cookie('token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: true,        // Always true for HTTPS (Vercel/Railway)
+            sameSite: 'none',    // Required for cross-site cookie sharing
             maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
         });
 
@@ -86,7 +86,12 @@ export async function register(req, res) {
                 role: user.role
         });
 
-        res.cookie('token', token);
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: true,        // Always true for HTTPS (Vercel/Railway)
+            sameSite: 'none',    // Required for cross-site cookie sharing
+            maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
+        });
 
         return res.status(201).json({
             message: 'User created successfully',
@@ -132,17 +137,17 @@ export async function googleAuthCallback(req, res) {
             );
 
             if(isUserAlreadyExists.role === "artist"){
-                return res.redirect("http://localhost:5173/artist/dashboard");
+                return res.redirect("https://madmax-nine.vercel.app/artist/dashboard");
             }
 
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
+                secure: true,        // Always true for HTTPS (Vercel/Railway)
+                sameSite: 'none',    // Required for cross-site cookie sharing
                 maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
             });
 
-            res.redirect('http://localhost:5173')
+            res.redirect('https://madmax-nine.vercel.app')
         }
 
         const newUser = await userModel.create({
@@ -174,8 +179,8 @@ export async function googleAuthCallback(req, res) {
         
         res.cookie('token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: true,        // Always true for HTTPS (Vercel/Railway)
+            sameSite: 'none',    // Required for cross-site cookie sharing
             maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
         });
 
@@ -197,23 +202,19 @@ export async function googleAuthCallback(req, res) {
     }
 }
 
-export async function getCurrentUser(req, res) {
+export async function logout(req, res) {
     try {
-        // The user should be available in req.user from the auth middleware
-        if (!req.user) {
-            return res.status(401).json({ message: 'Not authenticated' });
-        }
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none'
+        });
 
         res.json({
-            user: {
-                id: req.user._id,
-                email: req.user.email,
-                fullname: req.user.fullname,
-                role: req.user.role
-            }
+            message: 'Logout successful'
         });
     } catch (err) {
-        console.error('Get current user error:', err);
+        console.error('Logout error:', err);
         return res.status(500).json({ message: 'Internal server error', error: err.message });
     }
 }

@@ -176,12 +176,7 @@ export default function PlaylistDetail() {
             {playlist.musics.map((song, index) => (
               <div
                 key={song._id || index}
-                className="group flex items-center gap-4 p-4 bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/30 hover:bg-gray-700/50 transition-all duration-200 touch-target cursor-pointer"
-                onClick={(e) => {
-                  if (!e.target.closest('button')) {
-                    handlePlaySong(song, index);
-                  }
-                }}
+                className="group flex items-center gap-4 p-4 bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/30 hover:bg-gray-700/50 transition-all duration-200 touch-target"
               >
                 {/* Track Number */}
                 <div className="w-8 text-center">
@@ -189,10 +184,7 @@ export default function PlaylistDetail() {
                     {index + 1}
                   </span>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePlaySong(song, index);
-                    }}
+                    onClick={() => handlePlaySong(song, index)}
                     className="hidden group-hover:flex items-center justify-center w-8 h-8 bg-green-500 hover:bg-green-400 rounded-full transition-colors touch-target"
                   >
                     <svg className="w-4 h-4 text-black" fill="currentColor" viewBox="0 0 24 24">
@@ -237,10 +229,7 @@ export default function PlaylistDetail() {
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePlaySong(song, index);
-                    }}
+                    onClick={() => handlePlaySong(song, index)}
                     className="p-2 text-gray-400 hover:text-green-500 hover:bg-gray-600 rounded-full transition-colors opacity-0 group-hover:opacity-100 touch-target"
                     title="Play song"
                   >

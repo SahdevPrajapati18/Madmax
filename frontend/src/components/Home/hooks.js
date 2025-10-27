@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import API from '../services/api.js';
 import playlistService from '../../services/playlistService';
 import { filterSongs, groupSongsByArtist } from './utils';
 
@@ -13,12 +13,12 @@ export const useHomeData = (isAuthenticated) => {
   const fetchSongs = async () => {
     try {
       setLoading(true);
-      console.log('Fetching songs from:', `${import.meta.env.VITE_MUSIC_API}/api/music/public`);
-      const response = await axios.get(`${import.meta.env.VITE_MUSIC_API}/api/music/public`, {
+      console.log('Fetching songs from music API');
+      const response = await API.get('/music/public', {
         params: { skip: 0, limit: 50 }
       });
 
-      console.log('API Response:', response.data);
+      console.log('Songs API Response:', response.data);
 
       if (response.data && response.data.musics) {
         console.log(`Found ${response.data.musics.length} songs`);

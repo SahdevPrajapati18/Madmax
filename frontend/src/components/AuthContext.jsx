@@ -88,7 +88,6 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async (token) => {
     try {
-      console.log('🔐 Checking auth status with token');
       const response = await API.get('/auth/me', {
         headers: {
           Authorization: `Bearer ${token}`

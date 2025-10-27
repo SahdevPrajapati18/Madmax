@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import API from '../../services/api.js';
+import musicAPI from '../../services/api.js';
 
 export const useArtistSongs = (artistId) => {
   const [artistSongs, setArtistSongs] = useState([]);
@@ -17,7 +17,7 @@ export const useArtistSongs = (artistId) => {
       setError(null);
 
       // Fetch all songs and filter by artistId (public endpoint)
-      const response = await API.get('/music/public');
+      const response = await musicAPI.get('/music/public');
 
       if (response.data && response.data.musics) {
         const filteredSongs = response.data.musics.filter(
@@ -112,7 +112,7 @@ export const useSongManagement = () => {
 
   const handleSaveEdit = async () => {
     try {
-      const response = await API.put(`/music/${editingSong._id}`, editForm);
+      const response = await musicAPI.put(`/music/${editingSong._id}`, editForm);
 
       if (response.data.success) {
         setEditingSong(null);
@@ -128,7 +128,7 @@ export const useSongManagement = () => {
 
   const handleDeleteSong = async (songId) => {
     try {
-      const response = await API.delete(`/music/${songId}`);
+      const response = await musicAPI.delete(`/music/${songId}`);
 
       if (response.data.success) {
         setShowDeleteConfirm(null);

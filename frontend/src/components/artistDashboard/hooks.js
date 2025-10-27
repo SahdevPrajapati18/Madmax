@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import API from '../../services/api.js';
+import musicAPI from '../../services/api.js';
 
 export const useArtistMusic = () => {
   const [musics, setMusics] = useState([]);
@@ -10,7 +10,7 @@ export const useArtistMusic = () => {
     setLoading(true);
     setError(null);
 
-    API.get('/music/artist-musics')
+    musicAPI.get('/music/artist-musics')
       .then(res => {
         if (res.data && res.data.musics) {
           setMusics(res.data.musics.map(m =>({
@@ -48,7 +48,7 @@ export const useArtistPlaylists = () => {
     setLoading(true);
     setError(null);
 
-    API.get('/music/playlists')
+    musicAPI.get('/music/playlists')
       .then(res => {
         if (res.data && res.data.playlists) {
           setPlaylists(res.data.playlists.map(p => ({

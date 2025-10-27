@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { register: registerUser, error: authError, clearError } = useAuth();
+  const { register: registerUser, loginWithGoogle, error: authError, clearError } = useAuth();
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,6 +23,8 @@ export default function Register() {
       userType: 'user'
     }
   });
+
+  const selectedUserType = watch('userType');
 
   const onSubmit = async (data) => {
     console.log('📝 Form submitted with data:', data);
@@ -64,6 +66,13 @@ export default function Register() {
     }
   };
 
+  const handleGoogleLogin = () => {
+    console.log('🔄 Google login button clicked');
+    clearError();
+    setFormError('');
+    loginWithGoogle();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4 sm:p-6 lg:p-8 pb-24">
       <div className="w-full max-w-lg">
@@ -85,6 +94,7 @@ export default function Register() {
           {/* Google Sign In */}
           <button
             type="button"
+            onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-600 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 hover:border-gray-500 transition-all duration-200 touch-target mb-6"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -111,7 +121,12 @@ export default function Register() {
                 I want to register as:
               </label>
               <div className="grid grid-cols-2 gap-3">
-                <label className="relative flex items-center justify-center p-3 border border-gray-600 rounded-xl cursor-pointer transition-all duration-200 touch-target hover:border-gray-500 hover:bg-gray-700/30">
+                {/* Music Lover Option */}
+                <label className={`relative flex items-center justify-center p-3 border rounded-xl cursor-pointer transition-all duration-200 touch-target ${
+                  selectedUserType === 'user' 
+                    ? 'border-green-500 bg-green-500/10' 
+                    : 'border-gray-600 hover:border-gray-500 hover:bg-gray-700/30'
+                }`}>
                   <input
                     type="radio"
                     value="user"
@@ -120,7 +135,7 @@ export default function Register() {
                   />
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded-full border-2 border-gray-500 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-green-500 scale-0 transition-transform peer-checked:scale-100"></div>
+                      <div className={`w-2 h-2 rounded-full transition-all ${selectedUserType === 'user' ? 'bg-green-500 scale-100' : 'bg-green-500 scale-0'}`}></div>
                     </div>
                     <div className="text-center">
                       <div className="text-sm font-semibold text-gray-300">Music Lover</div>
@@ -128,7 +143,13 @@ export default function Register() {
                     </div>
                   </div>
                 </label>
-                <label className="relative flex items-center justify-center p-3 border border-gray-600 rounded-xl cursor-pointer transition-all duration-200 touch-target hover:border-gray-500 hover:bg-gray-700/30">
+
+                {/* Artist Option */}
+                <label className={`relative flex items-center justify-center p-3 border rounded-xl cursor-pointer transition-all duration-200 touch-target ${
+                  selectedUserType === 'artist' 
+                    ? 'border-green-500 bg-green-500/10' 
+                    : 'border-gray-600 hover:border-gray-500 hover:bg-gray-700/30'
+                }`}>
                   <input
                     type="radio"
                     value="artist"
@@ -137,7 +158,7 @@ export default function Register() {
                   />
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded-full border-2 border-gray-500 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-green-500 scale-0 transition-transform peer-checked:scale-100"></div>
+                      <div className={`w-2 h-2 rounded-full transition-all ${selectedUserType === 'artist' ? 'bg-green-500 scale-100' : 'bg-green-500 scale-0'}`}></div>
                     </div>
                     <div className="text-center">
                       <div className="text-sm font-semibold text-gray-300">Artist</div>

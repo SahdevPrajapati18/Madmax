@@ -66,7 +66,7 @@ Madmax follows a **microservices architecture** with separate services for diffe
 - **Asynchronous processing** for notifications
 - **Event-driven architecture** for scalability
 
-## 🛠️ Tech Stack
+![Website Screenshot](./frontend/public/madmax.png)
 
 ### Frontend
 - **React 19** - Modern React with hooks and concurrent features

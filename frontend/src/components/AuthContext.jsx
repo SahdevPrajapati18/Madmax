@@ -140,10 +140,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginWithGoogle = () => {
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://madmax-production.up.railway.app';
-    console.log('🔄 Redirecting to Google OAuth:', `${BACKEND_URL}/api/auth/google`);
-    window.location.href = `${BACKEND_URL}/api/auth/google`;
+  const logout = async () => {
+    try {
+      // Clear token from localStorage (no backend call needed for JWT logout)
+      localStorage.removeItem('token');
+      setUser(null);
+
+      // Reset music state on logout
+      setCurrentSong(null);
+      setCurrentPlaylist([]);
+      setCurrentSongIndex(-1);
+      setIsPlaying(false);
+
+      console.log('✅ User logged out successfully');
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+    }
   };
 
   // Global music functions

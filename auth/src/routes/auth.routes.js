@@ -5,6 +5,8 @@ import * as validationRules from '../middlewares/validation.middleware.js';
 import * as authMiddleware from '../middlewares/auth.middleware.js';
 import config from '../config/config.js';
 
+const router = express.Router();
+
 router.get('/me', authMiddleware.authUserMiddleware, authController.getCurrentUser);
 router.post('/register', validationRules.registerUserValidationRules, authController.register);
 router.post('/login', validationRules.loginUserValidationRules, authController.login);

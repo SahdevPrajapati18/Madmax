@@ -15,7 +15,7 @@ const _config = {
     JWT_SECRET: process.env.JWT_SECRET,
     CLIENT_ID: process.env.CLIENT_ID,
     CLIENT_SECRET: process.env.CLIENT_SECRET,
-    CLIENT_URL: process.env.CLIENT_URL,
+    CLIENT_URL: process.env.CLIENT_URL || process.env.GOOGLE_CALLBACK_URL,
     RABBITMQ_URI: process.env.RABBITMQ_URI,
 };
 
@@ -43,6 +43,7 @@ if (!_config.CLIENT_ID || !_config.CLIENT_SECRET || !_config.CLIENT_URL) {
     console.error('   - CLIENT_ID:', _config.CLIENT_ID ? '✓ Set' : '✗ Missing');
     console.error('   - CLIENT_SECRET:', _config.CLIENT_SECRET ? '✓ Set' : '✗ Missing');
     console.error('   - CLIENT_URL:', _config.CLIENT_URL ? '✓ Set' : '✗ Missing');
+    console.error('   - Note: CLIENT_URL can be set via CLIENT_URL or GOOGLE_CALLBACK_URL environment variable');
 }
 
 export default _config;

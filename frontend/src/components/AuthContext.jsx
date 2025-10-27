@@ -1,5 +1,5 @@
 import { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
-import axios from 'axios';
+import API from '../services/api.js';
 
 const AuthContext = createContext();
 
@@ -74,8 +74,7 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async (token) => {
     try {
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://madmax-production.up.railway.app';
-      const response = await axios.get(`${BACKEND_URL}/api/auth/me`, {
+      const response = await API.get('/auth/me', {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -95,8 +94,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://madmax-production.up.railway.app';
-      const response = await axios.post(`${BACKEND_URL}/api/auth/login`, {
+      const response = await API.post('/auth/login', {
         email,
         password
       });
@@ -122,8 +120,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (email, password, firstName, lastName, role = 'user') => {
     try {
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://madmax-production.up.railway.app';
-      const response = await axios.post(`${BACKEND_URL}/api/auth/register`, {
+      const response = await API.post('/auth/register', {
         email,
         password,
         fullname: {

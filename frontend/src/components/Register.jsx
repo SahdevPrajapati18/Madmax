@@ -7,6 +7,7 @@ export default function Register() {
   const navigate = useNavigate();
   const { register: registerUser, error: authError, clearError } = useAuth();
   const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -24,26 +25,42 @@ export default function Register() {
   });
 
   const onSubmit = async (data) => {
-    clearError();
-    setFormError('');
+    console.log('📝 Form submitted with data:', data);
+    
+    try {
+      setIsSubmitting(true);
+      clearError();
+      setFormError('');
 
-    const result = await registerUser(
-      data.email.trim(),
-      data.password,
-      data.firstName.trim(),
-      data.lastName.trim(),
-      data.userType
-    );
+      const result = await registerUser(
+        data.email.trim(),
+        data.password,
+        data.firstName.trim(),
+        data.lastName.trim(),
+        data.userType
+      );
 
-    if (result.success) {
-      // Redirect based on user role
-      if (result.user.role === 'artist') {
-        navigate('/dashboard');
+      console.log('📤 Registration result:', result);
+
+      if (result.success) {
+        console.log('✅ Registration successful');
+        // Redirect based on user role
+        if (result.user.role === 'artist') {
+          console.log('🎵 Redirecting to dashboard');
+          navigate('/dashboard');
+        } else {
+          console.log('🏠 Redirecting to home');
+          navigate('/');
+        }
       } else {
-        navigate('/');
+        console.error('❌ Registration failed:', result.error);
+        setFormError(result.error || authError);
       }
-    } else {
-      setFormError(result.error || authError);
+    } catch (error) {
+      console.error('❌ Unexpected error during registration:', error);
+      setFormError('An unexpected error occurred');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -291,9 +308,10 @@ export default function Register() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-black font-bold rounded-xl transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-800 touch-target shadow-lg"
+              disabled={isSubmitting}
+              className={`w-full py-3 px-4 ${isSubmitting ? 'bg-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'} text-black font-bold rounded-xl transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-800 touch-target shadow-lg`}
             >
-              Create Account
+              {isSubmitting ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 

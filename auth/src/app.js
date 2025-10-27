@@ -1,13 +1,13 @@
 import express from "express";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import cors from "cors";
 
 import config from "./config/config.js";
 import authRoutes from "./routes/auth.routes.js";
+
 const app = express();
 
 // ✅ CORS setup
@@ -16,7 +16,7 @@ app.use(
     origin: [
       "https://madmax-production.up.railway.app",
       "https://madmax-nine.vercel.app",
-      "http://localhost:5173", // optional for local dev
+      "http://localhost:5173",
     ],
     credentials: true,
   })
@@ -28,13 +28,23 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
+// ✅ Passport serialization (required even with session: false)
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
+
 // ✅ Passport Google OAuth strategy
 passport.use(
   new GoogleStrategy(
     {
       clientID: config.CLIENT_ID,
       clientSecret: config.CLIENT_SECRET,
-      callbackURL: `${config.CLIENT_URL}/api/auth/google/callback`,
+      // CRITICAL FIX: Use BACKEND_URL, not FRONTEND_URL
+      callbackURL: `${config.BACKEND_URL}/api/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -49,24 +59,25 @@ passport.use(
           return done(new Error('Invalid Google profile data'), null);
         }
 
-        // Log successful authentication (without sensitive data)
-        console.log('Google OAuth: Profile received for:', profile.emails[0].value);
+        // Log successful authentication
+        console.log('✅ Google OAuth: Profile received for:', profile.emails[0].value);
 
-        // Return profile directly - user creation/lookup is handled in the callback
+        // Return profile - user creation/lookup is handled in the callback
         return done(null, profile);
       } catch (err) {
-        console.error('Google OAuth strategy error:', err);
+        console.error('❌ Google OAuth strategy error:', err);
         return done(err, null);
       }
     }
   )
 );
+
 app.use(passport.initialize());
 
 // ✅ Auth routes
 app.use("/api/auth", authRoutes);
 
-// ✅ Health check (for Railway / ECS)
+// ✅ Health check
 app.get("/health", (req, res) => res.status(200).send("OK"));
 
 // ✅ OAuth configuration check (development only)
@@ -76,18 +87,22 @@ if (process.env.NODE_ENV !== 'production') {
       googleOAuth: {
         clientIdConfigured: !!config.CLIENT_ID,
         clientSecretConfigured: !!config.CLIENT_SECRET,
-        callbackUrl: `${config.CLIENT_URL}/api/auth/google/callback`,
-        clientUrlConfigured: !!config.CLIENT_URL
+        callbackUrl: `${config.BACKEND_URL}/api/auth/google/callback`,
+        frontendUrl: config.FRONTEND_URL,
+        backendUrl: config.BACKEND_URL
       },
       environment: process.env.NODE_ENV || 'development'
     });
   });
 }
 
-// ✅ Error handling for OAuth
+// ✅ Error handling
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ message: "Server Error", error: err.message });
+  console.error('❌ Server Error:', err);
+  res.status(500).json({ 
+    message: "Server Error", 
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message 
+  });
 });
 
 export default app;

@@ -20,7 +20,6 @@ export async function login(req, res) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Payload for JWT
         const payload = {
             id: user._id,
             email: user.email,
@@ -29,7 +28,6 @@ export async function login(req, res) {
             fullname: user.fullname
         };
 
-        // Sign JWT
         const token = jwt.sign(payload, config.JWT_SECRET, { expiresIn: '1d' });
 
         res.json({
@@ -42,7 +40,6 @@ export async function login(req, res) {
         return res.status(500).json({ message: 'Internal server error', error: err.message });
     }
 }
-
 
 export async function register(req, res) {
     try {
@@ -67,7 +64,6 @@ export async function register(req, res) {
             role
         });
 
-        // Payload for JWT
         const payload = {
             id: user._id,
             email: user.email,
@@ -76,7 +72,6 @@ export async function register(req, res) {
             fullname: user.fullname
         };
 
-        // Sign JWT
         const token = jwt.sign(payload, config.JWT_SECRET, { expiresIn: '1d' });
 
         await publishToQueue("user_created", {
@@ -102,21 +97,33 @@ export async function googleAuthCallback(req, res) {
         const user = req.user;
 
         if (!user || !user.emails || !user.emails[0] || !user.displayName) {
-            return res.status(500).json({
-                message: 'Error processing Google authentication',
-                error: 'Invalid Google account data'
+            console.error('❌ Invalid Google user data:', { 
+                hasUser: !!user, 
+                hasEmails: !!user?.emails, 
+                hasDisplayName: !!user?.displayName 
             });
+            return res.redirect(`${config.FRONTEND_URL}?error=invalid_user_data`);
         }
+
+        const email = user.emails[0].value;
+        console.log('🔍 Looking up user:', email);
 
         const isUserAlreadyExists = await userModel.findOne({
             $or: [
-                { email: user.emails[0].value },
+                { email: email },
                 { googleId: user.id }
             ]
         });
 
         if (isUserAlreadyExists) {
-            // Payload for JWT
+            console.log('✅ Existing user found:', email);
+            
+            // Update googleId if not set
+            if (!isUserAlreadyExists.googleId) {
+                isUserAlreadyExists.googleId = user.id;
+                await isUserAlreadyExists.save();
+            }
+
             const payload = {
                 id: isUserAlreadyExists._id,
                 email: isUserAlreadyExists.email,
@@ -125,15 +132,16 @@ export async function googleAuthCallback(req, res) {
                 fullname: isUserAlreadyExists.fullname
             };
 
-            // Sign JWT
             const token = jwt.sign(payload, config.JWT_SECRET, { expiresIn: '1d' });
 
             if (isUserAlreadyExists.role === "artist") {
-                return res.redirect(`https://madmax-nine.vercel.app/artist/dashboard?token=${token}`);
+                return res.redirect(`${config.FRONTEND_URL}/artist/dashboard?token=${token}`);
             }
 
-            return res.redirect(`https://madmax-nine.vercel.app?token=${token}`);
+            return res.redirect(`${config.FRONTEND_URL}?token=${token}`);
         }
+
+        console.log('✨ Creating new user:', email);
 
         // Parse name from Google profile
         const nameParts = user.displayName.split(' ');
@@ -141,13 +149,13 @@ export async function googleAuthCallback(req, res) {
         const lastName = nameParts.slice(1).join(' ') || '';
 
         const newUser = await userModel.create({
-            email: user.emails[0].value,
+            email: email,
             googleId: user.id,
             fullname: {
                 firstName: firstName,
                 lastName: lastName,
             },
-            role: 'user' // Default role for new Google users
+            role: 'user'
         });
 
         await publishToQueue("user_created", {
@@ -157,7 +165,6 @@ export async function googleAuthCallback(req, res) {
             role: newUser.role
         });
 
-        // Payload for JWT
         const payload = {
             id: newUser._id,
             email: newUser.email,
@@ -166,22 +173,18 @@ export async function googleAuthCallback(req, res) {
             fullname: newUser.fullname
         };
 
-        // Sign JWT
         const token = jwt.sign(payload, config.JWT_SECRET, { expiresIn: '1d' });
 
-        return res.redirect(`https://madmax-nine.vercel.app?token=${token}`);
+        console.log('✅ New user created, redirecting with token');
+        return res.redirect(`${config.FRONTEND_URL}?token=${token}`);
     } catch (err) {
-        console.error('Google auth callback error:', err);
-        return res.status(500).json({
-            message: 'Error processing Google authentication',
-            error: err.message
-        });
+        console.error('❌ Google auth callback error:', err);
+        return res.redirect(`${config.FRONTEND_URL}?error=auth_failed&message=${encodeURIComponent(err.message)}`);
     }
 }
 
 export async function getCurrentUser(req, res) {
     try {
-        // The user should be available in req.user from the auth middleware
         if (!req.user) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
@@ -203,8 +206,6 @@ export async function getCurrentUser(req, res) {
 
 export async function logout(req, res) {
     try {
-        // Since we're using JWT tokens, logout is handled on the frontend
-        // by removing the token from localStorage
         res.json({
             message: 'Logout successful'
         });

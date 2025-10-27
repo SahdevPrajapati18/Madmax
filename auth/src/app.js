@@ -6,9 +6,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import cors from "cors";
 
-import config from "./config/config.js";
-
-// ✅ Initialize Express app
+import authRoutes from "./routes/auth.routes.js";
 const app = express();
 
 // ✅ CORS setup
@@ -77,8 +75,8 @@ if (process.env.NODE_ENV !== 'production') {
       googleOAuth: {
         clientIdConfigured: !!config.CLIENT_ID,
         clientSecretConfigured: !!config.CLIENT_SECRET,
-        callbackUrl: `${config.GOOGLE_CALLBACK_URL}/api/auth/google/callback`,
-        clientUrlConfigured: !!config.GOOGLE_CALLBACK_URL
+        callbackUrl: `${config.CLIENT_URL}/api/auth/google/callback`,
+        clientUrlConfigured: !!config.CLIENT_URL
       },
       environment: process.env.NODE_ENV || 'development'
     });

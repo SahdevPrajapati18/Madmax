@@ -3,8 +3,7 @@ import passport from 'passport';
 import * as authController from '../controllers/auth.controller.js';
 import * as validationRules from '../middlewares/validation.middleware.js';
 import * as authMiddleware from '../middlewares/auth.middleware.js';
-
-const router = express.Router();
+import config from '../config/config.js';
 
 router.get('/me', authMiddleware.authUserMiddleware, authController.getCurrentUser);
 router.post('/register', validationRules.registerUserValidationRules, authController.register);
@@ -16,7 +15,7 @@ router.get(
     '/google/callback',
     passport.authenticate('google', {
         session: false,
-        failureRedirect: `${process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5173'}?error=auth_failed`
+        failureRedirect: `${config.CLIENT_URL || 'http://localhost:5173'}?error=auth_failed`
     }),
     authController.googleAuthCallback
 );

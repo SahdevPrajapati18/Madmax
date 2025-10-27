@@ -12,6 +12,7 @@ import MusicPlayer from './components/musicPlayer/MusicPlayer'
 import Playlists from './components/Playlists'
 import CreatePlaylist from './components/CreatePlaylist'
 import PlaylistDetail from './components/PlaylistDetail'
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 export default function App() {
   const { user, logout, isAuthenticated, currentSong, currentPlaylist, currentSongIndex, isPlaying, playSong, playNext, playPrevious, togglePlay, stopMusic } = useAuth();
@@ -52,6 +53,7 @@ export default function App() {
           onStop={stopMusic}
         />
       )}
+      <SpeedInsights/>
     </div>
   )
 }

@@ -14,7 +14,10 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 router.get(
     '/google/callback',
-    passport.authenticate('google', { session: false }),
+    passport.authenticate('google', {
+        session: false,
+        failureRedirect: `${process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5173'}?error=auth_failed`
+    }),
     authController.googleAuthCallback
 );
 

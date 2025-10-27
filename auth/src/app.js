@@ -6,9 +6,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import cors from "cors";
 
-import authRoutes from "./routes/auth.routes.js";
-
-dotenv.config();
+import config from "./config/config.js";
 
 // ✅ Initialize Express app
 const app = express();
@@ -35,16 +33,30 @@ app.use(morgan("dev"));
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.CLIENT_ID,
-      clientSecret: process.env.CLIENT_SECRET,
-      callbackURL: `${process.env.CLIENT_URL}/api/auth/google/callback`,
+      clientID: config.CLIENT_ID,
+      clientSecret: config.CLIENT_SECRET,
+      callbackURL: `${config.GOOGLE_CALLBACK_URL}/api/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // You can handle user creation or lookup here
-        // For now, returning profile directly
+        // Validate required profile data
+        if (!profile || !profile.id || !profile.emails || !profile.emails.length || !profile.displayName) {
+          console.error('Google OAuth: Invalid profile data received:', {
+            hasProfile: !!profile,
+            hasId: !!profile?.id,
+            hasEmails: !!profile?.emails?.length,
+            hasDisplayName: !!profile?.displayName
+          });
+          return done(new Error('Invalid Google profile data'), null);
+        }
+
+        // Log successful authentication (without sensitive data)
+        console.log('Google OAuth: Profile received for:', profile.emails[0].value);
+
+        // Return profile directly - user creation/lookup is handled in the callback
         return done(null, profile);
       } catch (err) {
+        console.error('Google OAuth strategy error:', err);
         return done(err, null);
       }
     }
@@ -57,6 +69,21 @@ app.use("/api/auth", authRoutes);
 
 // ✅ Health check (for Railway / ECS)
 app.get("/health", (req, res) => res.status(200).send("OK"));
+
+// ✅ OAuth configuration check (development only)
+if (process.env.NODE_ENV !== 'production') {
+  app.get("/oauth/config", (req, res) => {
+    res.json({
+      googleOAuth: {
+        clientIdConfigured: !!config.CLIENT_ID,
+        clientSecretConfigured: !!config.CLIENT_SECRET,
+        callbackUrl: `${config.GOOGLE_CALLBACK_URL}/api/auth/google/callback`,
+        clientUrlConfigured: !!config.GOOGLE_CALLBACK_URL
+      },
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+}
 
 // ✅ Error handling for OAuth
 app.use((err, req, res, next) => {

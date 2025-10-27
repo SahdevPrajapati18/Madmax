@@ -101,7 +101,7 @@ export async function googleAuthCallback(req, res) {
     try {
         const user = req.user;
 
-        if (!user || !user.emails || !user.emails[0] || !user.name) {
+        if (!user || !user.emails || !user.emails[0] || !user.displayName) {
             return res.status(500).json({
                 message: 'Error processing Google authentication',
                 error: 'Invalid Google account data'
@@ -135,12 +135,17 @@ export async function googleAuthCallback(req, res) {
             return res.redirect(`https://madmax-nine.vercel.app?token=${token}`);
         }
 
+        // Parse name from Google profile
+        const nameParts = user.displayName.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
         const newUser = await userModel.create({
             email: user.emails[0].value,
             googleId: user.id,
             fullname: {
-                firstName: user.name.givenName || '',
-                lastName: user.name.familyName || '',
+                firstName: firstName,
+                lastName: lastName,
             },
             role: 'user' // Default role for new Google users
         });

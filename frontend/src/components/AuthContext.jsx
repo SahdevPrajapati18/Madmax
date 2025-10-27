@@ -25,65 +25,86 @@ export const AuthProvider = ({ children }) => {
   // Track if redirect has been done
   const redirectDone = useRef(false);
 
+  // Initial auth check and OAuth handling
   useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem('token');
-    if (token) {
-      checkAuthStatus(token);
-    } else {
-      setLoading(false);
-    }
+    const initializeAuth = async () => {
+      try {
+        // Check if user is already logged in
+        const token = localStorage.getItem('token');
+        console.log('🔍 Token from localStorage:', token ? 'exists' : 'not found');
 
-    // Handle OAuth callback
-    const urlParams = new URLSearchParams(window.location.search);
-    const oauthToken = urlParams.get('token');
-    const errorParam = urlParams.get('error');
+        // Handle OAuth callback
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthToken = urlParams.get('token');
+        const errorParam = urlParams.get('error');
 
-    if (oauthToken) {
-      console.log('🔑 OAuth callback received token');
-      localStorage.setItem('token', oauthToken);
-      // Remove token from URL for security
-      window.history.replaceState({}, document.title, window.location.pathname);
-      checkAuthStatus(oauthToken);
-    } else if (errorParam) {
-      console.error('❌ OAuth error:', errorParam);
-      // Remove error from URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      setError(errorParam);
-    }
+        if (oauthToken) {
+          console.log('🔑 OAuth callback received token');
+          localStorage.setItem('token', oauthToken);
+          // Remove token from URL for security
+          window.history.replaceState({}, document.title, window.location.pathname);
+          await checkAuthStatus(oauthToken);
+        } else if (errorParam) {
+          console.error('❌ OAuth error:', errorParam);
+          // Remove error from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          setError(errorParam);
+          setLoading(false);
+        } else if (token) {
+          // Check existing token
+          await checkAuthStatus(token);
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('❌ Auth initialization error:', err);
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
+  // Handle user changes and redirects
   useEffect(() => {
-    // Debug: Log user changes and check for unwanted redirects
     if (user) {
-      console.log('AuthContext user updated:', user);
-      console.log('User role:', user.role);
-      console.log('User artistId:', user.artistId);
-      console.log('Current location:', window.location.pathname);
+      console.log('✅ AuthContext user updated:', user);
+      console.log('👤 User role:', user.role);
+      console.log('🎵 User artistId:', user.artistId);
+      console.log('📍 Current location:', window.location.pathname);
 
-      // Check if user is being redirected to wrong location (only once per login)
+      // Redirect artist users to dashboard (only once per login)
       if (user?.role === 'artist' && !window.location.pathname.startsWith('/dashboard') && !redirectDone.current) {
+        console.log('🔄 Redirecting artist user to dashboard');
         redirectDone.current = true;
         window.location.replace('/dashboard');
       }
     } else {
       // Reset redirect flag on logout
       redirectDone.current = false;
+      console.log('👋 User logged out, redirect flag reset');
     }
   }, [user]);
 
   const checkAuthStatus = async (token) => {
     try {
+      console.log('🔐 Checking auth status with token');
       const response = await API.get('/auth/me', {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
 
-      if (response.data && response.data.user) {
+      if (response.data?.user) {
+        console.log('✅ Auth check successful, user:', response.data.user);
         setUser(response.data.user);
+      } else {
+        console.warn('⚠️ No user data in response');
+        localStorage.removeItem('token');
+        setUser(null);
       }
     } catch (error) {
+      console.error('❌ Auth check failed:', error?.response?.status, error?.message);
       // User is not authenticated
       localStorage.removeItem('token');
       setUser(null);
@@ -94,32 +115,42 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('🔄 Attempting login for:', email);
       const response = await API.post('/auth/login', {
         email,
         password
       });
 
-      if (response.data && response.data.token && response.data.user) {
-        console.log('AuthContext login success, user:', response.data.user);
-        console.log('User role:', response.data.user.role);
+      if (response.data?.token && response.data?.user) {
+        console.log('✅ Login successful, user:', response.data.user);
+        console.log('👤 User role:', response.data.user.role);
 
         // Store token in localStorage
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
         redirectDone.current = false; // Reset redirect flag on new login
+        
         return { success: true, user: response.data.user };
+      } else {
+        console.warn('⚠️ Incomplete login response');
+        return {
+          success: false,
+          error: 'Invalid server response'
+        };
       }
     } catch (error) {
-      console.error('AuthContext login error:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Login failed';
+      console.error('❌ Login error:', errorMsg);
       return {
         success: false,
-        error: error.response?.data?.message || 'Login failed'
+        error: errorMsg
       };
     }
   };
 
   const register = async (email, password, firstName, lastName, role = 'user') => {
     try {
+      console.log('🔄 Attempting registration for:', email, 'as role:', role);
       const response = await API.post('/auth/register', {
         email,
         password,
@@ -130,23 +161,35 @@ export const AuthProvider = ({ children }) => {
         role
       });
 
-      if (response.data && response.data.token && response.data.user) {
+      if (response.data?.token && response.data?.user) {
+        console.log('✅ Registration successful, user:', response.data.user);
+
         // Store token in localStorage
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
         redirectDone.current = false; // Reset redirect flag on new registration
+        
         return { success: true, user: response.data.user };
+      } else {
+        console.warn('⚠️ Incomplete registration response');
+        return {
+          success: false,
+          error: 'Invalid server response'
+        };
       }
     } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message || 'Registration failed';
+      console.error('❌ Registration error:', errorMsg);
       return {
         success: false,
-        error: error.response?.data?.message || 'Registration failed'
+        error: errorMsg
       };
     }
   };
 
   const logout = async () => {
     try {
+      console.log('🔄 Logging out user');
       // Clear token from localStorage (no backend call needed for JWT logout)
       localStorage.removeItem('token');
       setUser(null);
@@ -172,6 +215,7 @@ export const AuthProvider = ({ children }) => {
 
   // Global music functions
   const playSong = useCallback((song, playlist = [], index = -1) => {
+    console.log('🎵 Playing song:', song?.title || song?.name);
     setCurrentSong(song);
     setCurrentPlaylist(playlist);
     setCurrentSongIndex(index);
@@ -179,26 +223,36 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const playNext = useCallback(() => {
-    if (currentPlaylist.length === 0 || currentSongIndex === -1) return;
+    if (currentPlaylist.length === 0 || currentSongIndex === -1) {
+      console.warn('⚠️ Cannot play next: no playlist or invalid index');
+      return;
+    }
 
     const nextIndex = (currentSongIndex + 1) % currentPlaylist.length;
+    console.log('⏭️ Playing next song, index:', nextIndex);
     setCurrentSong(currentPlaylist[nextIndex]);
     setCurrentSongIndex(nextIndex);
   }, [currentPlaylist, currentSongIndex]);
 
   const playPrevious = useCallback(() => {
-    if (currentPlaylist.length === 0 || currentSongIndex === -1) return;
+    if (currentPlaylist.length === 0 || currentSongIndex === -1) {
+      console.warn('⚠️ Cannot play previous: no playlist or invalid index');
+      return;
+    }
 
     const prevIndex = currentSongIndex === 0 ? currentPlaylist.length - 1 : currentSongIndex - 1;
+    console.log('⏮️ Playing previous song, index:', prevIndex);
     setCurrentSong(currentPlaylist[prevIndex]);
     setCurrentSongIndex(prevIndex);
   }, [currentPlaylist, currentSongIndex]);
 
   const togglePlay = useCallback(() => {
-    setIsPlaying(!isPlaying);
+    console.log('⏯️ Toggle play:', !isPlaying ? 'playing' : 'paused');
+    setIsPlaying(prev => !prev);
   }, [isPlaying]);
 
   const stopMusic = useCallback(() => {
+    console.log('⏹️ Stopping music');
     setCurrentSong(null);
     setCurrentPlaylist([]);
     setCurrentSongIndex(-1);

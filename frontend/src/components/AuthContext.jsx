@@ -140,8 +140,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const clearError = () => {
-    setError('');
+  const loginWithGoogle = () => {
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://madmax-production.up.railway.app';
+    console.log('🔄 Redirecting to Google OAuth:', `${BACKEND_URL}/api/auth/google`);
+    window.location.href = `${BACKEND_URL}/api/auth/google`;
   };
 
   // Global music functions

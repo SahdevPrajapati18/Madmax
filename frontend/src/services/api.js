@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// Use environment variable with fallback to production URL
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://madmax-production.up.railway.app';
+
 const API = axios.create({
-  baseURL: 'https://adventurous-miracle-production.up.railway.app/api',
+  baseURL: `${BACKEND_URL}/api`,
+  withCredentials: true, // Important for CORS
 });
 
 // Attach JWT automatically

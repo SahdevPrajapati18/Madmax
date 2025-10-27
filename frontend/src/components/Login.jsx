@@ -5,8 +5,8 @@ import { useAuth } from './AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [error, setError] = useState('');
+  const { login, loginWithGoogle, error, clearError } = useAuth();
+  const [formError, setFormError] = useState('');
 
   const {
     register,
@@ -20,7 +20,8 @@ export default function Login() {
   });
 
   const onSubmit = async (data) => {
-    setError('');
+    clearError();
+    setFormError('');
 
     const result = await login(data.email.trim(), data.password);
 
@@ -37,7 +38,7 @@ export default function Login() {
         navigate('/');
       }
     } else {
-      setError(result.error);
+      setFormError(result.error);
     }
   };
 
@@ -64,7 +65,9 @@ export default function Login() {
             type="button"
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-600 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 hover:border-gray-500 transition-all duration-200 touch-target mb-6"
             onClick={() => {
-              window.location.href = `${import.meta.env.VITE_CLIENT_URL}/api/auth/google`
+              clearError();
+              setFormError('');
+              loginWithGoogle();
             }}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -170,12 +173,12 @@ export default function Login() {
             </div>
 
             {/* Error Message */}
-            {error && (
+            {(error || formError) && (
               <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-start gap-2">
                 <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
-                <span>{error}</span>
+                <span>{error || formError}</span>
               </div>
             )}
 

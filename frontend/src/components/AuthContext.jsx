@@ -15,6 +15,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   // Global music state
   const [currentSong, setCurrentSong] = useState(null);
@@ -29,6 +30,24 @@ export const AuthProvider = ({ children }) => {
       checkAuthStatus(token);
     } else {
       setLoading(false);
+    }
+
+    // Handle OAuth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const oauthToken = urlParams.get('token');
+    const error = urlParams.get('error');
+
+    if (oauthToken) {
+      console.log('🔑 OAuth callback received token');
+      localStorage.setItem('token', oauthToken);
+      // Remove token from URL for security
+      window.history.replaceState({}, document.title, window.location.pathname);
+      checkAuthStatus(oauthToken);
+    } else if (error) {
+      console.error('❌ OAuth error:', error);
+      // Remove error from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setError(error);
     }
   }, []);
 
@@ -49,7 +68,8 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async (token) => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_AUTH_API}/api/auth/me`, {
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://madmax-production.up.railway.app';
+      const response = await axios.get(`${BACKEND_URL}/api/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -69,7 +89,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_AUTH_API}/api/auth/login`, {
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://madmax-production.up.railway.app';
+      const response = await axios.post(`${BACKEND_URL}/api/auth/login`, {
         email,
         password
       });
@@ -94,7 +115,8 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (email, password, firstName, lastName, role = 'user') => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_AUTH_API}/api/auth/register`, {
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://madmax-production.up.railway.app';
+      const response = await axios.post(`${BACKEND_URL}/api/auth/register`, {
         email,
         password,
         fullname: {
@@ -118,20 +140,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
-    try {
-      // Clear token from localStorage (no backend call needed for JWT logout)
-      localStorage.removeItem('token');
-      setUser(null);
-
-      // Reset music state on logout
-      setCurrentSong(null);
-      setCurrentPlaylist([]);
-      setCurrentSongIndex(-1);
-      setIsPlaying(false);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+  const clearError = () => {
+    setError('');
   };
 
   // Global music functions
@@ -176,8 +186,11 @@ export const AuthProvider = ({ children }) => {
     user,
     login,
     register,
+    loginWithGoogle,
     logout,
     loading,
+    error,
+    clearError,
     isAuthenticated: !!user,
     // Global music state
     currentSong,

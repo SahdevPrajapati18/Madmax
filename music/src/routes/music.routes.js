@@ -33,6 +33,9 @@ router.get('/artist-musics', authMiddleware.authArtistMiddleware, musicControlle
 // GET /api/music/music-details/:id
 router.get('/music-details/:id', authMiddleware.authUserMiddleware, musicController.getMusicDetails)
 
+// DELETE /api/music/:id
+router.delete('/:id', authMiddleware.authArtistMiddleware, musicController.deleteMusic)
+
 // Playlist routes - work for both users and artists
 // POST /api/music/playlist
 router.post('/playlist', authMiddleware.authUserMiddleware, musicController.createPlaylist)

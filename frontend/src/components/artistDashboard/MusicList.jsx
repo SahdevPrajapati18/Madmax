@@ -1,7 +1,20 @@
 import { Link } from 'react-router-dom';
 import { formatNumber } from './utils';
 
-export default function MusicList({ musics, loading, playSong }) {
+export default function MusicList({ musics, loading, playSong, onDeleteMusic }) {
+  const handleDelete = async (e, musicId, musicTitle) => {
+    e.stopPropagation();
+
+    if (window.confirm(`Are you sure you want to delete "${musicTitle}"? This action cannot be undone.`)) {
+      if (onDeleteMusic) {
+        const result = await onDeleteMusic(musicId);
+        if (!result.success) {
+          alert(`Failed to delete music: ${result.error}`);
+        }
+      }
+    }
+  };
+
   return (
     <div className="xl:col-span-2 bg-gray-800/80 backdrop-blur-sm rounded-lg border border-gray-700 p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -48,9 +61,17 @@ export default function MusicList({ musics, loading, playSong }) {
                     <path d="M8 5v14l11-7z"/>
                   </svg>
                 </button>
-                <button className="p-2 text-gray-400 hover:text-green-500 hover:bg-gray-600 rounded-full transition-colors flex-shrink-0 touch-target">
+                <button className="p-2 text-gray-400 hover:text-blue-500 hover:bg-gray-600 rounded-full transition-colors opacity-0 sm:opacity-100 group-hover:opacity-100 touch-target">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <button
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-600 rounded-full transition-colors opacity-0 sm:opacity-100 group-hover:opacity-100 touch-target"
+                  onClick={(e) => handleDelete(e, music.id, music.title)}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
               </div>

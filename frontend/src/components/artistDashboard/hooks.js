@@ -6,7 +6,7 @@ export const useArtistMusic = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchMusics = () => {
     setLoading(true);
     setError(null);
 
@@ -34,9 +34,25 @@ export const useArtistMusic = () => {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchMusics();
   }, []);
 
-  return { musics, loading, error };
+  const deleteMusic = async (musicId) => {
+    try {
+      await musicAPI.delete(`/music/${musicId}`);
+      // Refresh the music list after deletion
+      fetchMusics();
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting music:', error);
+      return { success: false, error: error.response?.data?.message || 'Failed to delete music' };
+    }
+  };
+
+  return { musics, loading, error, deleteMusic, refreshMusics: fetchMusics };
 };
 
 export const useArtistPlaylists = () => {

@@ -1,4 +1,4 @@
-import { uploadFile, getPresignedUrl } from '../services/storage.service.js';
+import { uploadFile, getPresignedUrl, deleteFile } from '../services/storage.service.js';
 import musicModel from '../models/music.model.js';
 import playlistModel from '../models/playlist.model.js';
 import mongoose from 'mongoose';
@@ -219,6 +219,57 @@ export async function getMusicDetails(req, res) {
     return res.status(500).json({ 
       message: 'Failed to retrieve music details', 
       error: err.message 
+    });
+  }
+}
+
+// ------------------------ Delete Music ------------------------
+export async function deleteMusic(req, res) {
+  try {
+    // Validate authentication
+    if (!validateAuth(req, res)) return;
+
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid music ID format' });
+    }
+
+    // Find the music track and verify ownership
+    const music = await musicModel.findOne({
+      _id: id,
+      artistId: req.user.id
+    });
+
+    if (!music) {
+      return res.status(404).json({
+        message: 'Music not found or access denied'
+      });
+    }
+
+    // Delete files from Supabase storage
+    try {
+      await Promise.all([
+        deleteFile(music.musicKey),
+        deleteFile(music.coverImageKey)
+      ]);
+    } catch (storageError) {
+      console.error('Error deleting files from storage:', storageError);
+      // Continue with database deletion even if storage deletion fails
+    }
+
+    // Delete from database
+    await musicModel.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      message: 'Music deleted successfully'
+    });
+  } catch (err) {
+    console.error('Delete music error:', err);
+    return res.status(500).json({
+      message: 'Failed to delete music',
+      error: err.message
     });
   }
 }

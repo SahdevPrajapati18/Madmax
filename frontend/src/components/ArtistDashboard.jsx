@@ -9,7 +9,7 @@ import PlaylistList from './artistDashboard/PlaylistList';
 
 export default function ArtistDashboard() {
   const { user, playSong } = useAuth();
-  const { musics, loading: musicLoading } = useArtistMusic();
+  const { musics, loading: musicLoading, deleteMusic } = useArtistMusic();
   const { playlists, loading: playlistLoading } = useArtistPlaylists();
 
   const handlePlayPlaylist = async (playlist) => {
@@ -41,7 +41,7 @@ export default function ArtistDashboard() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <MusicList musics={musics} loading={musicLoading} playSong={playSong} />
+          <MusicList musics={musics} loading={musicLoading} playSong={playSong} onDeleteMusic={deleteMusic} />
           <PlaylistList playlists={playlists} loading={playlistLoading} handlePlayPlaylist={handlePlayPlaylist} />
         </div>
       </div>

@@ -21,6 +21,7 @@ A full-stack music streaming application built with modern web technologies. Mad
 - **Artist profiles** with bio and portfolio
 - **Track analytics** and insights
 - **Direct fan engagement** tools
+- **Music deletion** and content management
 
 ### 📱 Playlists & Organization
 - **Create and manage playlists** with custom artwork
@@ -253,6 +254,7 @@ GET /api/music - Get all music (authenticated)
 POST /api/music/upload - Upload music (artists only)
 GET /api/music/music-details/:id - Get music details
 GET /api/music/artist-musics - Get artist's music
+DELETE /api/music/:id - Delete music (artists only)
 ```
 
 ### Playlist Endpoints

@@ -43,3 +43,20 @@ export async function getPresignedUrl(filePath) {
 
   return data.signedUrl;
 }
+
+// ----------------- Delete File -----------------
+export async function deleteFile(filePath) {
+  if (!filePath) throw new Error('No file path provided');
+
+  const bucket = 'music-files';
+  const { error } = await supabase.storage
+    .from(bucket)
+    .remove([filePath]);
+
+  if (error) {
+    console.error('Supabase delete error:', error);
+    throw new Error(error.message);
+  }
+
+  return true;
+}

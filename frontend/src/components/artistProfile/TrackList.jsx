@@ -65,9 +65,14 @@ export default function TrackList({
             {artistSongs.map((song, index) => (
               <div
                 key={song._id || index}
-                className={`grid grid-cols-12 gap-4 p-4 hover:bg-gray-700 transition-colors cursor-pointer group ${
+                className={`grid grid-cols-12 gap-4 p-4 hover:bg-gray-700 transition-colors cursor-pointer group touch-target ${
                   currentSong?._id === song._id ? 'bg-gray-700' : ''
                 }`}
+                onClick={(e) => {
+                  if (!e.target.closest('button')) {
+                    onPlaySong(song, index);
+                  }
+                }}
               >
                 <div className="col-span-1 flex items-center justify-center text-gray-400 text-sm">
                   {currentSong?._id === song._id ? (
@@ -133,7 +138,10 @@ export default function TrackList({
                   {/* Play button */}
                   <button
                     className="w-8 h-8 bg-transparent hover:bg-green-500 rounded-full flex items-center justify-center text-gray-400 hover:text-black transition-all opacity-0 group-hover:opacity-100"
-                    onClick={() => onPlaySong(song, index)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPlaySong(song, index);
+                    }}
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
                       <path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/>

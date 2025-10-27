@@ -43,7 +43,15 @@ export default function ArtistsList({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {artist.songs.slice(0, 3).map((song, songIndex) => (
-                  <div key={song._id || songIndex} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-600/50 transition-colors touch-target">
+                  <div
+                    key={song._id || songIndex}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-600/50 transition-colors touch-target cursor-pointer"
+                    onClick={(e) => {
+                      if (isAuthenticated && !e.target.closest('button')) {
+                        playSong(song, artist.songs, songIndex);
+                      }
+                    }}
+                  >
                     <img
                       src={song.coverImageUrl || 'https://via.placeholder.com/50x50?text=No+Image'}
                       alt={song.title}

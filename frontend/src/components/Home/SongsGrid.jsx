@@ -25,6 +25,7 @@ export default function SongsGrid({
             <div
               key={song._id || song.id || index}
               className="group bg-gray-800/80 backdrop-blur-sm rounded-lg p-3 sm:p-4 hover:bg-gray-700/80 transition-all duration-200 cursor-pointer touch-target"
+              onClick={() => playSong(song, songs, index)}
             >
               <div className="relative mb-3 aspect-square">
                 <img
@@ -35,7 +36,10 @@ export default function SongsGrid({
                 {isAuthenticated && (
                   <button
                     className="absolute bottom-2 right-2 w-10 h-10 sm:w-12 sm:h-12 bg-green-500 hover:bg-green-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-lg touch-target"
-                    onClick={() => playSong(song, songs, index)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playSong(song, songs, index);
+                    }}
                   >
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-black ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5.14v14l11-7-11-7z" />

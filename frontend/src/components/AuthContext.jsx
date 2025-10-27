@@ -1,6 +1,5 @@
-import { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { useKeyboardShortcuts } from './musicPlayer/useKeyboardShortcuts';
 
 const AuthContext = createContext();
 
@@ -23,6 +22,9 @@ export const AuthProvider = ({ children }) => {
   const [currentSongIndex, setCurrentSongIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Track if redirect has been done
+  const redirectDone = useRef(false);
+
   useEffect(() => {
     // Check if user is already logged in
     const token = localStorage.getItem('token');
@@ -35,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     // Handle OAuth callback
     const urlParams = new URLSearchParams(window.location.search);
     const oauthToken = urlParams.get('token');
-    const error = urlParams.get('error');
+    const errorParam = urlParams.get('error');
 
     if (oauthToken) {
       console.log('🔑 OAuth callback received token');
@@ -43,11 +45,11 @@ export const AuthProvider = ({ children }) => {
       // Remove token from URL for security
       window.history.replaceState({}, document.title, window.location.pathname);
       checkAuthStatus(oauthToken);
-    } else if (error) {
-      console.error('❌ OAuth error:', error);
+    } else if (errorParam) {
+      console.error('❌ OAuth error:', errorParam);
       // Remove error from URL
       window.history.replaceState({}, document.title, window.location.pathname);
-      setError(error);
+      setError(errorParam);
     }
   }, []);
 
@@ -59,10 +61,14 @@ export const AuthProvider = ({ children }) => {
       console.log('User artistId:', user.artistId);
       console.log('Current location:', window.location.pathname);
 
-      // Check if user is being redirected to wrong location
-      if (user?.role === 'artist' && !window.location.pathname.startsWith('/dashboard')) {
+      // Check if user is being redirected to wrong location (only once per login)
+      if (user?.role === 'artist' && !window.location.pathname.startsWith('/dashboard') && !redirectDone.current) {
+        redirectDone.current = true;
         window.location.replace('/dashboard');
       }
+    } else {
+      // Reset redirect flag on logout
+      redirectDone.current = false;
     }
   }, [user]);
 
@@ -102,6 +108,7 @@ export const AuthProvider = ({ children }) => {
         // Store token in localStorage
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
+        redirectDone.current = false; // Reset redirect flag on new login
         return { success: true, user: response.data.user };
       }
     } catch (error) {
@@ -130,6 +137,7 @@ export const AuthProvider = ({ children }) => {
         // Store token in localStorage
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
+        redirectDone.current = false; // Reset redirect flag on new registration
         return { success: true, user: response.data.user };
       }
     } catch (error) {
@@ -152,10 +160,17 @@ export const AuthProvider = ({ children }) => {
       setCurrentSongIndex(-1);
       setIsPlaying(false);
 
+      // Reset redirect flag
+      redirectDone.current = false;
+
       console.log('✅ User logged out successfully');
     } catch (error) {
       console.error('❌ Logout error:', error);
     }
+  };
+
+  const clearError = () => {
+    setError('');
   };
 
   // Global music functions
